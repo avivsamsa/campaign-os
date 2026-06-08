@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { makeBrandSkeleton } from '@/lib/brand';
 import { validateAccount } from '@/lib/validation';
+
+type AdAccount = { id: string; name: string };
 
 export default function NewClientPage() {
   const router = useRouter();
@@ -13,6 +15,19 @@ export default function NewClientPage() {
   // שלב א' — הגדרות חשבון
   const [name, setName] = useState('');
   const [metaAccountId, setMetaAccountId] = useState('');
+  const [adAccounts, setAdAccounts] = useState<AdAccount[]>([]);
+  const [adAccountsError, setAdAccountsError] = useState('');
+
+  // טעינת חשבונות המודעות שהטוקן רואה — picker במקום הקלדה ידנית
+  useEffect(() => {
+    fetch('/api/meta/ad-accounts')
+      .then((r) => r.json())
+      .then((d) => {
+        setAdAccounts(d.accounts ?? []);
+        if (d.error) setAdAccountsError(d.error);
+      })
+      .catch((e) => setAdAccountsError(e instanceof Error ? e.message : String(e)));
+  }, []);
   const [niche, setNiche] = useState('');
   const [currency, setCurrency] = useState('ILS');
   const [grossMargin, setGrossMargin] = useState('0.5');
@@ -120,16 +135,39 @@ export default function NewClientPage() {
 
           <div className="field">
             <label>
-              Meta Account ID <span className="hint">(חובה, ספרות בלבד)</span>
+              חשבון מודעות (Meta){' '}
+              <span className="hint">
+                {adAccounts.length > 0
+                  ? '(מתוך החשבונות שהטוקן רואה — בחירה מבטיחה הרשאה נכונה)'
+                  : '(הזנה ידנית — ספרות בלבד)'}
+              </span>
             </label>
-            <input
-              className={`input ${errors.meta_account_id ? 'invalid' : ''}`}
-              value={metaAccountId}
-              onChange={(e) => setMetaAccountId(e.target.value)}
-              inputMode="numeric"
-              placeholder="123456789012345"
-            />
+            {adAccounts.length > 0 ? (
+              <select
+                className={`select ${errors.meta_account_id ? 'invalid' : ''}`}
+                value={metaAccountId}
+                onChange={(e) => setMetaAccountId(e.target.value)}
+              >
+                <option value="">— בחר חשבון —</option>
+                {adAccounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name} · {a.id}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                className={`input ${errors.meta_account_id ? 'invalid' : ''}`}
+                value={metaAccountId}
+                onChange={(e) => setMetaAccountId(e.target.value)}
+                inputMode="numeric"
+                placeholder="123456789012345"
+              />
+            )}
             {errors.meta_account_id && <div className="field-error">{errors.meta_account_id}</div>}
+            {adAccountsError && (
+              <div className="field-error">לא ניתן לטעון רשימת חשבונות: {adAccountsError}</div>
+            )}
           </div>
 
           <div className="field">

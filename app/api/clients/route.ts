@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/lib/supabase';
 import { validateAccount } from '@/lib/validation';
+import { metaGet, MetaApiError } from '@/lib/meta';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,6 +35,22 @@ export async function POST(req: Request) {
   });
   if (Object.keys(errors).length > 0) {
     return NextResponse.json({ error: 'ולידציה נכשלה', errors }, { status: 400 });
+  }
+
+  // הגנה: ודא שהטוקן באמת רואה את חשבון המודעות לפני שיצירת לקוח שלא עובד.
+  const metaAccountId = String(body.meta_account_id).trim();
+  try {
+    await metaGet(`act_${metaAccountId}`, { fields: 'id' });
+  } catch (err) {
+    const detail =
+      err instanceof MetaApiError ? err.toReadable() : err instanceof Error ? err.message : String(err);
+    return NextResponse.json(
+      {
+        error: `ה-Meta token לא רואה את חשבון המודעות ${metaAccountId}. בדוק את ה-Account ID, ושה-System User ב-BM מקבל הרשאה ל-Ad Account הזה. פירוט: ${detail}`,
+        errors: { meta_account_id: 'לא נמצא / אין הרשאה' },
+      },
+      { status: 400 },
+    );
   }
 
   const { data: client, error: clientErr } = await supabase
