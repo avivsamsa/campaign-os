@@ -29,8 +29,12 @@ export type EnrichedLead = {
   created_at: string;
   closed_at: string | null;
   ad_id: string | null;
-  creative_id: string | null;
+  ad_label: string | null;
+  campaign_id: string | null;
   campaign_label: string | null;
+  meta_adset_id: string | null;
+  adset_label: string | null;
+  creative_id: string | null;
   creative_label: string | null;
   creative_thumb: string | null;
 };
@@ -57,13 +61,28 @@ export async function fetchClientLeads(clientId: string): Promise<EnrichedLead[]
   const rows = leads ?? [];
 
   const adIds = [...new Set(rows.map((l) => l.ad_id).filter(Boolean) as string[])];
-  const adInfo = new Map<string, { campaign_id: string; creative_id: string | null }>();
+  const adInfo = new Map<
+    string,
+    {
+      campaign_id: string;
+      creative_id: string | null;
+      meta_adset_id: string | null;
+      adset_name: string | null;
+      ad_name: string | null;
+    }
+  >();
   if (adIds.length > 0) {
-    const { data: ads } = await sb.from('ads').select('id, campaign_id, creative_id').in('id', adIds);
+    const { data: ads } = await sb
+      .from('ads')
+      .select('id, campaign_id, creative_id, meta_adset_id, meta_adset_name, name')
+      .in('id', adIds);
     for (const a of ads ?? []) {
       adInfo.set(a.id as string, {
         campaign_id: a.campaign_id as string,
         creative_id: (a.creative_id as string) ?? null,
+        meta_adset_id: (a.meta_adset_id as string) ?? null,
+        adset_name: (a.meta_adset_name as string) ?? null,
+        ad_name: (a.name as string) ?? null,
       });
     }
   }
@@ -96,6 +115,9 @@ export async function fetchClientLeads(clientId: string): Promise<EnrichedLead[]
 
   return rows.map((l) => {
     const ad = l.ad_id ? adInfo.get(l.ad_id) : undefined;
+    const adsetLabel = ad
+      ? ad.adset_name || (ad.meta_adset_id ? `Adset ${ad.meta_adset_id}` : null)
+      : null;
     return {
       id: l.id as string,
       meta_lead_id: (l.meta_lead_id as string) ?? null,
@@ -107,8 +129,12 @@ export async function fetchClientLeads(clientId: string): Promise<EnrichedLead[]
       created_at: l.created_at as string,
       closed_at: (l.closed_at as string) ?? null,
       ad_id: (l.ad_id as string) ?? null,
-      creative_id: ad?.creative_id ?? null,
+      ad_label: ad?.ad_name ?? null,
+      campaign_id: ad?.campaign_id ?? null,
       campaign_label: ad ? campaignName.get(ad.campaign_id) ?? null : null,
+      meta_adset_id: ad?.meta_adset_id ?? null,
+      adset_label: adsetLabel,
+      creative_id: ad?.creative_id ?? null,
       creative_label: ad?.creative_id ? creativeLabel.get(ad.creative_id) ?? null : null,
       creative_thumb: ad?.creative_id ? creativeThumb.get(ad.creative_id) ?? null : null,
     };

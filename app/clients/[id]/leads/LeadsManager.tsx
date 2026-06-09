@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LEAD_STATUSES, type EnrichedLead } from '@/lib/leads';
 
@@ -33,6 +33,48 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
     ),
   );
   const [importMsg, setImportMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  // פילטרים מדורגים: קמפיין → סדרת מודעות → מודעה
+  const [filterCampaign, setFilterCampaign] = useState('');
+  const [filterAdset, setFilterAdset] = useState('');
+  const [filterAd, setFilterAd] = useState('');
+
+  // אופציות נגזרות מתוך הלידים — מסתננות לפי הבחירה בשלב הקודם
+  const campaigns = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const l of initialLeads) if (l.campaign_id) m.set(l.campaign_id, l.campaign_label || l.campaign_id);
+    return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  }, [initialLeads]);
+
+  const adsets = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const l of initialLeads) {
+      if (filterCampaign && l.campaign_id !== filterCampaign) continue;
+      if (l.meta_adset_id) m.set(l.meta_adset_id, l.adset_label || l.meta_adset_id);
+    }
+    return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  }, [initialLeads, filterCampaign]);
+
+  const ads = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const l of initialLeads) {
+      if (filterCampaign && l.campaign_id !== filterCampaign) continue;
+      if (filterAdset && l.meta_adset_id !== filterAdset) continue;
+      if (l.ad_id) m.set(l.ad_id, l.ad_label || l.creative_label || l.ad_id);
+    }
+    return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  }, [initialLeads, filterCampaign, filterAdset]);
+
+  const filteredLeads = useMemo(
+    () =>
+      initialLeads.filter(
+        (l) =>
+          (!filterCampaign || l.campaign_id === filterCampaign) &&
+          (!filterAdset || l.meta_adset_id === filterAdset) &&
+          (!filterAd || l.ad_id === filterAd),
+      ),
+    [initialLeads, filterCampaign, filterAdset, filterAd],
+  );
 
   function setRow(id: string, patch: Partial<RowState>) {
     setRows((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
@@ -122,8 +164,70 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
         )}
       </div>
 
+      {initialLeads.length > 0 && (
+        <div className="card">
+          <div className="toolbar">
+            <div className="field">
+              <label>קמפיין</label>
+              <select
+                className="select"
+                value={filterCampaign}
+                onChange={(e) => {
+                  setFilterCampaign(e.target.value);
+                  setFilterAdset('');
+                  setFilterAd('');
+                }}
+              >
+                <option value="">כל הקמפיינים</option>
+                {campaigns.map(([id, label]) => (
+                  <option key={id} value={id}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label>סדרת מודעות</label>
+              <select
+                className="select"
+                value={filterAdset}
+                onChange={(e) => {
+                  setFilterAdset(e.target.value);
+                  setFilterAd('');
+                }}
+              >
+                <option value="">כל סדרות המודעות</option>
+                {adsets.map(([id, label]) => (
+                  <option key={id} value={id}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label>מודעה</label>
+              <select className="select" value={filterAd} onChange={(e) => setFilterAd(e.target.value)}>
+                <option value="">כל המודעות</option>
+                {ads.map(([id, label]) => (
+                  <option key={id} value={id}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field" style={{ flex: '1 1 auto', textAlign: 'left' }}>
+              <span className="muted" style={{ fontSize: '0.85rem' }}>
+                {filteredLeads.length} מתוך {initialLeads.length} לידים
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {initialLeads.length === 0 ? (
         <div className="card muted">אין לידים. סנכרן קמפיין lead, או ייבא CSV.</div>
+      ) : filteredLeads.length === 0 ? (
+        <div className="card muted">אין לידים התואמים את הסינון.</div>
       ) : (
         <table className="table table-compact">
           <thead>
@@ -131,7 +235,7 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
               <th style={{ width: 90 }}>תאריך</th>
               <th>שם</th>
               <th style={{ width: 130 }}>טלפון</th>
-              <th style={{ width: 44 }} />
+              <th style={{ width: 72 }} />
               <th>קריאטיב</th>
               <th style={{ width: 130 }}>סטטוס</th>
               <th style={{ width: 110 }}>deal_value</th>
@@ -139,7 +243,7 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
             </tr>
           </thead>
           <tbody>
-            {initialLeads.map((l) => {
+            {filteredLeads.map((l) => {
               const r = rows[l.id];
               return (
                 <tr key={l.id}>

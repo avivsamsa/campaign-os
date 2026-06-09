@@ -150,7 +150,7 @@ export async function syncClient(clientId: string, range?: DateRange): Promise<S
   // כולל שדות ויזואליים: thumbnail (תצוגה מקדימה) + נכס מלא (image_url / source של וידאו).
   const metaAds = await metaGetAll(`${actPath}/ads`, {
     fields:
-      'id,name,status,adset_id,campaign_id,creative{id,name,thumbnail_url,image_url,video_id,object_story_spec}',
+      'id,name,status,adset_id,adset{name},campaign_id,creative{id,name,thumbnail_url,image_url,video_id,object_story_spec}',
   });
 
   // מידע ויזואלי פר מזהה קריאטיב: thumbnail + נכס מלא + סוג ('image'|'video').
@@ -271,6 +271,7 @@ export async function syncClient(clientId: string, range?: DateRange): Promise<S
     adsProcessed += 1;
     const creativeUuid = ma.creative?.id ? creativeUuidByMeta.get(ma.creative.id) ?? null : null;
     const existingId = adUuidByMeta.get(ma.id);
+    const adsetName = ma.adset?.name ?? null;
     if (existingId) {
       await supabase
         .from('ads')
@@ -278,6 +279,7 @@ export async function syncClient(clientId: string, range?: DateRange): Promise<S
           campaign_id: campUuid,
           creative_id: creativeUuid,
           meta_adset_id: ma.adset_id ?? null,
+          meta_adset_name: adsetName,
           name: ma.name ?? null,
           status: ma.status ?? null,
           synced_at: now(),
@@ -289,6 +291,7 @@ export async function syncClient(clientId: string, range?: DateRange): Promise<S
         creative_id: creativeUuid,
         meta_ad_id: ma.id,
         meta_adset_id: ma.adset_id ?? null,
+        meta_adset_name: adsetName,
         name: ma.name ?? null,
         status: ma.status ?? null,
         synced_at: now(),
