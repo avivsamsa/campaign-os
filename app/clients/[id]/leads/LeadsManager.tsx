@@ -244,15 +244,16 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
       {initialLeads.length > 0 && filteredLeads.length === 0 ? (
         <div className="card muted">אין לידים התואמים את הסינון.</div>
       ) : initialLeads.length > 0 ? (
+        <div className="table-scroll">
         <table className="table table-compact">
           <thead>
             <tr>
-              <th style={{ width: 90 }}>תאריך</th>
-              <th>שם</th>
+              <th style={{ width: 110 }}>תאריך</th>
+              <th style={{ width: 180 }}>שם</th>
               <th style={{ width: 130 }}>טלפון</th>
               <th style={{ width: 72 }} />
-              <th>קריאטיב</th>
-              <th style={{ width: 130 }}>סטטוס</th>
+              <th style={{ width: 220 }}>קריאטיב</th>
+              <th style={{ width: 140 }}>סטטוס</th>
               <th style={{ width: 110 }}>deal_value</th>
               <th style={{ width: 90 }}>הערות</th>
               <th style={{ width: 80 }} />
@@ -261,10 +262,24 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
           <tbody>
             {filteredLeads.map((l) => {
               const r = rows[l.id];
+              const d = l.created_at ? new Date(l.created_at) : null;
               return (
                 <tr key={l.id}>
-                  <td>{l.created_at?.slice(0, 10)}</td>
-                  <td>{l.name ?? '—'}</td>
+                  <td>
+                    {d ? (
+                      <div className="cell-stack">
+                        <span>{d.toISOString().slice(0, 10)}</span>
+                        <span className="sub">
+                          {d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                  <td className="cell-truncate" title={l.name ?? ''}>
+                    {l.name ?? '—'}
+                  </td>
                   <td>{l.phone ?? '—'}</td>
                   <td>
                     {l.creative_thumb ? (
@@ -322,6 +337,7 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
             })}
           </tbody>
         </table>
+        </div>
       ) : null}
 
       {notesFor && (

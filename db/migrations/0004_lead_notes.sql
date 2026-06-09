@@ -11,3 +11,4 @@ create index if not exists lead_notes_lead_created_idx
   on lead_notes(lead_id, created_at desc);
 
 alter table lead_notes enable row level security;
+d

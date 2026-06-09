@@ -612,12 +612,44 @@ h2 {
   padding: 0.4rem 0.55rem;
   font-size: 0.88rem;
   vertical-align: middle;
+  white-space: nowrap; /* תאים לא נשברים שורה — מי שצריך, יקבל .cell-truncate */
 }
-.table.table-compact .truncate {
-  max-width: 240px;
+.table.table-compact .truncate,
+.table.table-compact .cell-truncate {
+  max-width: 220px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.cell-stack {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+.cell-stack .sub {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scroll container for long/wide tables — מונע מהעמוד להתפוצץ אופקית/אנכית */
+.table-scroll {
+  max-height: 70vh;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+}
+.table-scroll > .table {
+  border: none;
+  border-radius: 0;
+  margin: 0;
+}
+.table-scroll > .table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #fafbfc;
 }
 
 /* Small inline controls for compact tables */
