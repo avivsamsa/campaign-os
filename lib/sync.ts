@@ -184,7 +184,13 @@ export async function syncClient(clientId: string, range?: DateRange): Promise<S
         cr.image_url || cr.object_story_spec?.link_data?.picture || cr.thumbnail_url || null;
     }
 
-    creativeInfo.set(cr.id, { asset_url: thumb, name: cr.name || null, full_asset_url, asset_type });
+    // שם המודעה (ad.name) הוא השם המשמעותי בחשבון — מועדף על שם ה-creative הגולמי של Meta.
+    creativeInfo.set(cr.id, {
+      asset_url: thumb,
+      name: a.name || cr.name || null,
+      full_asset_url,
+      asset_type,
+    });
   }
   const creativeMetaIds = [...creativeInfo.keys()];
 
@@ -213,7 +219,8 @@ export async function syncClient(clientId: string, range?: DateRange): Promise<S
     if (info.asset_url) update.asset_url = info.asset_url;
     if (info.full_asset_url) update.full_asset_url = info.full_asset_url;
     if (info.asset_type) update.asset_type = info.asset_type;
-    if (!ex.concept && info.name) update.concept = info.name;
+    // concept תמיד נשמר מסונכרן עם שם המודעה — מודעה=קריאטיב בחשבון.
+    if (info.name) update.concept = info.name;
     if (Object.keys(update).length > 0) {
       await supabase.from('creatives').update(update).eq('id', ex.id);
     }
