@@ -17,8 +17,10 @@ export type EnrichedLead = {
   created_at: string;
   closed_at: string | null;
   ad_id: string | null;
+  creative_id: string | null;
   campaign_label: string | null;
   creative_label: string | null;
+  creative_thumb: string | null;
 };
 
 /**
@@ -65,16 +67,18 @@ export async function fetchClientLeads(clientId: string): Promise<EnrichedLead[]
     ...new Set([...adInfo.values()].map((a) => a.creative_id).filter(Boolean) as string[]),
   ];
   const creativeLabel = new Map<string, string>();
+  const creativeThumb = new Map<string, string | null>();
   if (creativeIds.length > 0) {
     const { data: crs } = await sb
       .from('creatives')
-      .select('id, concept, meta_creative_id')
+      .select('id, concept, meta_creative_id, asset_url')
       .in('id', creativeIds);
     for (const c of crs ?? []) {
       creativeLabel.set(
         c.id as string,
         (c.concept as string) || `קריאטיב ${c.meta_creative_id ?? c.id}`,
       );
+      creativeThumb.set(c.id as string, (c.asset_url as string) ?? null);
     }
   }
 
@@ -91,8 +95,10 @@ export async function fetchClientLeads(clientId: string): Promise<EnrichedLead[]
       created_at: l.created_at as string,
       closed_at: (l.closed_at as string) ?? null,
       ad_id: (l.ad_id as string) ?? null,
+      creative_id: ad?.creative_id ?? null,
       campaign_label: ad ? campaignName.get(ad.campaign_id) ?? null : null,
       creative_label: ad?.creative_id ? creativeLabel.get(ad.creative_id) ?? null : null,
+      creative_thumb: ad?.creative_id ? creativeThumb.get(ad.creative_id) ?? null : null,
     };
   });
 }

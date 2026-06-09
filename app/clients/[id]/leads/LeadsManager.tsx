@@ -120,16 +120,17 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
       {initialLeads.length === 0 ? (
         <div className="card muted">אין לידים. סנכרן קמפיין lead, או ייבא CSV.</div>
       ) : (
-        <table className="table">
+        <table className="table table-compact">
           <thead>
             <tr>
-              <th>תאריך</th>
+              <th style={{ width: 90 }}>תאריך</th>
               <th>שם</th>
-              <th>טלפון</th>
+              <th style={{ width: 130 }}>טלפון</th>
+              <th style={{ width: 44 }} />
               <th>קריאטיב</th>
-              <th>סטטוס</th>
-              <th>deal_value</th>
-              <th />
+              <th style={{ width: 130 }}>סטטוס</th>
+              <th style={{ width: 110 }}>deal_value</th>
+              <th style={{ width: 80 }} />
             </tr>
           </thead>
           <tbody>
@@ -140,10 +141,25 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
                   <td>{l.created_at?.slice(0, 10)}</td>
                   <td>{l.name ?? '—'}</td>
                   <td>{l.phone ?? '—'}</td>
-                  <td>{l.creative_label ?? '—'}</td>
+                  <td>
+                    {l.creative_thumb ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={l.creative_thumb}
+                        alt=""
+                        className="lead-thumb"
+                        title={l.creative_label ?? ''}
+                      />
+                    ) : (
+                      <span className="muted" style={{ fontSize: '0.7rem' }}>—</span>
+                    )}
+                  </td>
+                  <td className="truncate" title={l.creative_label ?? ''}>
+                    {l.creative_label ?? '—'}
+                  </td>
                   <td>
                     <select
-                      className="select"
+                      className="select select-sm"
                       value={r.status}
                       onChange={(e) => setRow(l.id, { status: e.target.value, saved: false })}
                     >
@@ -156,16 +172,15 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
                   </td>
                   <td>
                     <input
-                      className="input"
-                      style={{ maxWidth: 120 }}
+                      className="input input-sm"
                       inputMode="decimal"
                       value={r.deal_value}
                       onChange={(e) => setRow(l.id, { deal_value: e.target.value, saved: false })}
                     />
                   </td>
                   <td>
-                    <button className="btn primary" onClick={() => saveLead(l.id)} disabled={r.saving}>
-                      {r.saving ? '...' : r.saved ? 'נשמר ✓' : 'שמור'}
+                    <button className="btn btn-sm primary" onClick={() => saveLead(l.id)} disabled={r.saving}>
+                      {r.saving ? '...' : r.saved ? '✓' : 'שמור'}
                     </button>
                   </td>
                 </tr>
