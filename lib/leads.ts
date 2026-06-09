@@ -37,6 +37,7 @@ export type EnrichedLead = {
   creative_id: string | null;
   creative_label: string | null;
   creative_thumb: string | null;
+  notes_count: number;
 };
 
 /**
@@ -113,6 +114,21 @@ export async function fetchClientLeads(clientId: string): Promise<EnrichedLead[]
     }
   }
 
+  // ספירת הערות פר ליד — סבילות לטבלה חסרה (מיגרציה לא הורצה עדיין → 0).
+  const notesCount = new Map<string, number>();
+  if (rows.length > 0) {
+    const leadIds = rows.map((l) => l.id as string);
+    const { data: notes, error: notesErr } = await sb
+      .from('lead_notes')
+      .select('lead_id')
+      .in('lead_id', leadIds);
+    if (!notesErr) {
+      for (const n of notes ?? []) {
+        notesCount.set(n.lead_id as string, (notesCount.get(n.lead_id as string) ?? 0) + 1);
+      }
+    }
+  }
+
   return rows.map((l) => {
     const ad = l.ad_id ? adInfo.get(l.ad_id) : undefined;
     const adsetLabel = ad
@@ -137,6 +153,7 @@ export async function fetchClientLeads(clientId: string): Promise<EnrichedLead[]
       creative_id: ad?.creative_id ?? null,
       creative_label: ad?.creative_id ? creativeLabel.get(ad.creative_id) ?? null : null,
       creative_thumb: ad?.creative_id ? creativeThumb.get(ad.creative_id) ?? null : null,
+      notes_count: notesCount.get(l.id as string) ?? 0,
     };
   });
 }

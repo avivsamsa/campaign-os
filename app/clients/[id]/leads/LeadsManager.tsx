@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LEAD_STATUSES, type EnrichedLead } from '@/lib/leads';
+import LeadNotesPanel from './LeadNotesPanel';
 
 type Props = { clientId: string; initialLeads: EnrichedLead[] };
 
@@ -33,6 +34,12 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
     ),
   );
   const [importMsg, setImportMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [notesFor, setNotesFor] = useState<EnrichedLead | null>(null);
+  const [notesCounts, setNotesCounts] = useState<Record<string, number>>({});
+
+  function getCount(l: EnrichedLead): number {
+    return notesCounts[l.id] ?? l.notes_count ?? 0;
+  }
 
   // פילטרים מדורגים: קמפיין → סדרת מודעות → מודעה
   const [filterCampaign, setFilterCampaign] = useState('');
@@ -247,6 +254,7 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
               <th>קריאטיב</th>
               <th style={{ width: 130 }}>סטטוס</th>
               <th style={{ width: 110 }}>deal_value</th>
+              <th style={{ width: 90 }}>הערות</th>
               <th style={{ width: 80 }} />
             </tr>
           </thead>
@@ -296,6 +304,15 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
                     />
                   </td>
                   <td>
+                    <button
+                      className="btn btn-sm"
+                      onClick={() => setNotesFor(l)}
+                      title="צפייה והוספת הערות"
+                    >
+                      💬 {getCount(l) > 0 ? getCount(l) : ''}
+                    </button>
+                  </td>
+                  <td>
                     <button className="btn btn-sm primary" onClick={() => saveLead(l.id)} disabled={r.saving}>
                       {r.saving ? '...' : r.saved ? '✓' : 'שמור'}
                     </button>
@@ -306,6 +323,15 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
           </tbody>
         </table>
       ) : null}
+
+      {notesFor && (
+        <LeadNotesPanel
+          leadId={notesFor.id}
+          leadName={notesFor.name}
+          onClose={() => setNotesFor(null)}
+          onChange={(count) => setNotesCounts((prev) => ({ ...prev, [notesFor.id]: count }))}
+        />
+      )}
     </>
   );
 }
