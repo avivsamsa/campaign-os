@@ -632,15 +632,20 @@ h2 {
   font-variant-numeric: tabular-nums;
 }
 
-/* רק הגנת overflow אופקי במצבי קצה — העמוד גולל אנכית כרגיל. */
+/* גלילה אנכית בתוך הטבלה, רוחב מותאם למסך (בלי גלילה צידית). */
 .table-scroll {
-  overflow-x: auto;
-  /* מסתיר את ה-scrollbar כשלא נחוץ; מציג אותו עדין כשכן */
+  max-height: calc(100vh - 280px);
+  min-height: 240px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }
 .table-scroll::-webkit-scrollbar {
-  height: 8px;
+  width: 8px;
 }
 .table-scroll::-webkit-scrollbar-thumb {
   background: var(--border);
@@ -649,8 +654,24 @@ h2 {
 .table-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
+.table-scroll > .table {
+  border: none;
+  border-radius: 0;
+  margin: 0;
+}
+.table-scroll > .table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #fafbfc;
+  box-shadow: 0 1px 0 var(--border);
+}
 
-/* Polish for the leads table */
+/* Layout מקובע + נימוקי polish לטבלת לידים */
+.table.table-compact {
+  table-layout: fixed;
+  width: 100%;
+}
 .table.table-compact tbody tr {
   transition: background 0.1s ease;
 }

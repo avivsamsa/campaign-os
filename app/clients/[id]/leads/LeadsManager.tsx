@@ -249,13 +249,13 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
           <thead>
             <tr>
               <th style={{ width: 110 }}>תאריך</th>
-              <th style={{ width: 180 }}>שם</th>
+              <th>שם</th>
               <th style={{ width: 130 }}>טלפון</th>
               <th style={{ width: 72 }} />
-              <th style={{ width: 220 }}>קריאטיב</th>
+              <th>קריאטיב</th>
               <th style={{ width: 140 }}>סטטוס</th>
               <th style={{ width: 110 }}>deal_value</th>
-              <th style={{ width: 90 }}>הערות</th>
+              <th style={{ width: 80 }}>הערות</th>
               <th style={{ width: 80 }} />
             </tr>
           </thead>
