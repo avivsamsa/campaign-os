@@ -127,42 +127,41 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
     }
   }
 
+  const csvActions = (
+    <>
+      <a
+        className="btn btn-sm"
+        href={`/api/clients/${clientId}/leads/export`}
+        title="ייצוא CSV ממולא מראש (תאריך, שם, טלפון, קריאטיב, סטטוס, deal_value)"
+      >
+        ⬇ ייצוא
+      </a>
+      <button
+        className="btn btn-sm"
+        onClick={() => fileRef.current?.click()}
+        title="ייבוא CSV — מעדכן status ו-deal_value לפי lead_id / meta_lead_id"
+      >
+        ⬆ ייבוא
+      </button>
+      <input
+        ref={fileRef}
+        type="file"
+        accept=".csv,text/csv"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) onImport(f);
+          e.target.value = '';
+        }}
+      />
+    </>
+  );
+
   return (
     <>
-      <div className="card">
-        <div className="row-between" style={{ marginBottom: 0 }}>
-          <h2 style={{ margin: 0 }}>צינור גיליון / CSV</h2>
-          <div className="btn-row" style={{ marginTop: 0 }}>
-            <a className="btn" href={`/api/clients/${clientId}/leads/export`}>
-              ⬇ ייצוא CSV
-            </a>
-            <button className="btn" onClick={() => fileRef.current?.click()}>
-              ⬆ ייבוא CSV
-            </button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".csv,text/csv"
-              style={{ display: 'none' }}
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) onImport(f);
-                e.target.value = '';
-              }}
-            />
-          </div>
-        </div>
-        <p className="muted" style={{ fontSize: '0.85rem', marginBottom: 0 }}>
-          ייצא CSV ממולא מראש (תאריך, שם, טלפון, קריאטיב), הלקוח ממלא <b>status</b> ו-<b>deal_value</b>,
-          וייבא חזרה. <b>נקודת החיבור האוטומטי ל-Google Sheets</b> תיכנס באותו חוזה נתונים (ראה{' '}
-          <code>lib/leadsheet.ts</code>).
-        </p>
-        {importMsg && (
-          <div className={importMsg.ok ? 'banner-ok' : 'banner-error'} style={{ marginTop: '1rem' }}>
-            {importMsg.text}
-          </div>
-        )}
-      </div>
+      {importMsg && (
+        <div className={importMsg.ok ? 'banner-ok' : 'banner-error'}>{importMsg.text}</div>
+      )}
 
       {initialLeads.length > 0 && (
         <div className="card">
@@ -215,20 +214,29 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
                 ))}
               </select>
             </div>
-            <div className="field" style={{ flex: '1 1 auto', textAlign: 'left' }}>
-              <span className="muted" style={{ fontSize: '0.85rem' }}>
-                {filteredLeads.length} מתוך {initialLeads.length} לידים
+            <div
+              className="field"
+              style={{ flex: '1 1 auto', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.5rem' }}
+            >
+              <span className="muted" style={{ fontSize: '0.82rem' }}>
+                {filteredLeads.length} מתוך {initialLeads.length}
               </span>
+              {csvActions}
             </div>
           </div>
         </div>
       )}
 
-      {initialLeads.length === 0 ? (
-        <div className="card muted">אין לידים. סנכרן קמפיין lead, או ייבא CSV.</div>
-      ) : filteredLeads.length === 0 ? (
+      {initialLeads.length === 0 && (
+        <div className="card muted" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
+          <span>אין לידים. סנכרן קמפיין lead, או ייבא CSV.</span>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>{csvActions}</div>
+        </div>
+      )}
+
+      {initialLeads.length > 0 && filteredLeads.length === 0 ? (
         <div className="card muted">אין לידים התואמים את הסינון.</div>
-      ) : (
+      ) : initialLeads.length > 0 ? (
         <table className="table table-compact">
           <thead>
             <tr>
@@ -297,7 +305,7 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
             })}
           </tbody>
         </table>
-      )}
+      ) : null}
     </>
   );
 }
