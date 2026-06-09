@@ -632,24 +632,33 @@ h2 {
   font-variant-numeric: tabular-nums;
 }
 
-/* Scroll container for long/wide tables — מונע מהעמוד להתפוצץ אופקית/אנכית */
+/* רק הגנת overflow אופקי במצבי קצה — העמוד גולל אנכית כרגיל. */
 .table-scroll {
-  max-height: 70vh;
-  overflow: auto;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--card);
+  overflow-x: auto;
+  /* מסתיר את ה-scrollbar כשלא נחוץ; מציג אותו עדין כשכן */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
-.table-scroll > .table {
-  border: none;
-  border-radius: 0;
-  margin: 0;
+.table-scroll::-webkit-scrollbar {
+  height: 8px;
 }
-.table-scroll > .table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
+.table-scroll::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+.table-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Polish for the leads table */
+.table.table-compact tbody tr {
+  transition: background 0.1s ease;
+}
+.table.table-compact tbody tr:hover {
   background: #fafbfc;
+}
+.table.table-compact tbody td {
+  border-bottom: 1px solid #f0f2f5;
 }
 
 /* Small inline controls for compact tables */
