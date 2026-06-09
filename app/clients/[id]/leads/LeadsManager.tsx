@@ -9,10 +9,15 @@ type Props = { clientId: string; initialLeads: EnrichedLead[] };
 type RowState = { status: string; deal_value: string; saving: boolean; saved: boolean };
 
 const STATUS_LABEL: Record<string, string> = {
-  new: 'חדש',
-  contacted: 'נוצר קשר',
+  new: 'ליד חדש',
+  no_answer_1: 'אין מענה 1',
+  no_answer_2: 'אין מענה 2',
+  followup: 'פולואפ',
+  meeting_scheduled: 'תואמה פגישה',
+  whatsapp: 'התכתבות בווטסאפ',
+  quote_sent: 'נשלחה הצעת מחיר',
   closed: 'נסגר',
-  lost: 'אבוד',
+  irrelevant: 'לא רלוונטי',
 };
 
 export default function LeadsManager({ clientId, initialLeads }: Props) {

@@ -3,7 +3,19 @@
  */
 import { getSupabaseClient } from './supabase';
 
-export const LEAD_STATUSES = ['new', 'contacted', 'closed', 'lost'] as const;
+// סטטוסי פייפליין מכירה. 'new' = ברירת מחדל ללידים נכנסים. 'closed' עדיין
+// המקור ל-revenue (lib/metrics.ts קורא ל-status === 'closed').
+export const LEAD_STATUSES = [
+  'new',
+  'no_answer_1',
+  'no_answer_2',
+  'followup',
+  'meeting_scheduled',
+  'whatsapp',
+  'quote_sent',
+  'closed',
+  'irrelevant',
+] as const;
 export type LeadStatus = (typeof LEAD_STATUSES)[number];
 
 export type EnrichedLead = {
