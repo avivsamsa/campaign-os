@@ -614,12 +614,15 @@ h2 {
   vertical-align: middle;
   white-space: nowrap; /* תאים לא נשברים שורה — מי שצריך, יקבל .cell-truncate */
 }
-.table.table-compact .truncate,
-.table.table-compact .cell-truncate {
-  max-width: 220px;
-  white-space: nowrap;
+/* Cell wrapper: עד 2 שורות, אז ellipsis. שובר מילים ארוכות. */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: break-word;
+  white-space: normal;
+  line-height: 1.3;
 }
 .cell-stack {
   display: flex;

@@ -277,8 +277,10 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
                       '—'
                     )}
                   </td>
-                  <td className="cell-truncate" title={l.name ?? ''}>
-                    {l.name ?? '—'}
+                  <td>
+                    <div className="line-clamp-2" title={l.name ?? ''}>
+                      {l.name ?? '—'}
+                    </div>
                   </td>
                   <td>{l.phone ?? '—'}</td>
                   <td>
@@ -294,8 +296,10 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
                       <span className="muted" style={{ fontSize: '0.7rem' }}>—</span>
                     )}
                   </td>
-                  <td className="truncate" title={l.creative_label ?? ''}>
-                    {l.creative_label ?? '—'}
+                  <td>
+                    <div className="line-clamp-2" title={l.creative_label ?? ''}>
+                      {l.creative_label ?? '—'}
+                    </div>
                   </td>
                   <td>
                     <select
