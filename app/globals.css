@@ -239,6 +239,36 @@ h2 {
   margin-bottom: 1rem;
 }
 
+/* Portal shell (separate from admin — no sidebar) */
+.portal-shell {
+  min-height: 100vh;
+}
+.portal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  padding: 0.9rem 2rem;
+}
+.portal-brand {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 1.05rem;
+}
+.portal-nav {
+  display: flex;
+  gap: 1rem;
+}
+.portal-nav a {
+  color: var(--text);
+  font-size: 0.95rem;
+}
+.portal-main {
+  padding-top: 1.5rem;
+}
+
 /* App shell + sidebar */
 .app-shell {
   min-height: 100vh;
@@ -281,6 +311,9 @@ h2 {
 }
 .app-main {
   margin-right: 220px;
+}
+body.portal-mode .app-main {
+  margin-right: 0;
 }
 
 @media (max-width: 760px) {

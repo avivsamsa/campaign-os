@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
 
 const ITEMS = [
   { href: '/', label: 'Dashboard' },
@@ -13,6 +14,16 @@ const ITEMS = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const inPortal = pathname.startsWith('/portal/') || pathname === '/portal';
+
+  // מסיר את ההזחה של app-main כשמסתירים את הסיידבר (פורטל)
+  useEffect(() => {
+    if (inPortal) document.body.classList.add('portal-mode');
+    else document.body.classList.remove('portal-mode');
+  }, [inPortal]);
+
+  if (inPortal) return null;
+
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href);
 
@@ -26,7 +37,6 @@ export default function Sidebar() {
           </Link>
         ))}
       </nav>
-      {/* מקום שמור לפריטים עתידיים: קריאטיבים · תובנות (לא נוספים בשלב זה) */}
     </aside>
   );
 }
