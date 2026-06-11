@@ -127,53 +127,113 @@ export default function PortalAccessEditor({ clientId }: { clientId: string }) {
         ) : accesses.length === 0 ? (
           <p className="muted">אין עדיין קישורי גישה.</p>
         ) : (
-          <table className="table table-compact">
-            <thead>
-              <tr>
-                <th>תווית</th>
-                <th>קישור</th>
-                <th style={{ width: 90 }}>עריכת לידים</th>
-                <th style={{ width: 130 }}>נוצר</th>
-                <th style={{ width: 130 }}>נצפה לאחרונה</th>
-                <th style={{ width: 80 }}>סטטוס</th>
-                <th style={{ width: 160 }} />
-              </tr>
-            </thead>
-            <tbody>
-              {accesses.map((a) => (
-                <tr key={a.token} style={a.revoked_at ? { opacity: 0.55 } : undefined}>
-                  <td>{a.label ?? '—'}</td>
-                  <td>
-                    <code style={{ fontSize: '0.78rem' }}>{urlFor(a.token)}</code>
-                  </td>
-                  <td>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+            {accesses.map((a) => (
+              <div
+                key={a.token}
+                className="card"
+                style={{
+                  margin: 0,
+                  padding: '1rem 1.1rem',
+                  opacity: a.revoked_at ? 0.6 : 1,
+                  border: a.revoked_at ? '1px solid var(--border)' : '1px solid var(--border)',
+                }}
+              >
+                <div className="row-between" style={{ marginBottom: '0.75rem', alignItems: 'flex-start', gap: '0.5rem' }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: '0.15rem' }}>
+                      {a.label ?? <span className="muted">ללא תווית</span>}
+                    </div>
+                    <div className="muted" style={{ fontSize: '0.78rem' }}>
+                      נוצר {fmt.format(new Date(a.created_at))}
+                      {a.last_seen_at && ` · נצפה ${fmt.format(new Date(a.last_seen_at))}`}
+                    </div>
+                  </div>
+                  {a.revoked_at ? (
+                    <span className="badge" style={{ background: 'var(--surface-2)' }}>בוטל</span>
+                  ) : (
+                    <span className="badge" style={{ background: 'var(--ok-soft)', color: 'var(--ok)' }}>פעיל</span>
+                  )}
+                </div>
+
+                {/* URL + copy */}
+                <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.85rem', alignItems: 'center' }}>
+                  <code
+                    style={{
+                      flex: 1,
+                      fontSize: '0.76rem',
+                      padding: '0.4rem 0.6rem',
+                      background: 'var(--surface-2)',
+                      borderRadius: 'var(--radius-sm)',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      direction: 'ltr',
+                    }}
+                  >
+                    {urlFor(a.token)}
+                  </code>
+                  <button className="btn btn-sm" onClick={() => copy(a.token)} disabled={!!a.revoked_at}>
+                    {copiedToken === a.token ? 'הועתק ✓' : 'העתק'}
+                  </button>
+                </div>
+
+                {/* Permission toggles */}
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                    gap: '0.5rem',
+                    padding: '0.65rem 0.8rem',
+                    background: 'var(--surface-2)',
+                    borderRadius: 'var(--radius)',
+                    marginBottom: '0.85rem',
+                  }}
+                >
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.88rem', cursor: a.revoked_at ? 'not-allowed' : 'pointer' }}>
                     <input
                       type="checkbox"
                       checked={a.can_edit_leads}
                       disabled={!!a.revoked_at}
                       onChange={(e) => update(a.token, { can_edit_leads: e.target.checked })}
+                      style={{ accentColor: 'var(--primary)' }}
                     />
-                  </td>
-                  <td className="sub">{fmt.format(new Date(a.created_at))}</td>
-                  <td className="sub">{a.last_seen_at ? fmt.format(new Date(a.last_seen_at)) : '—'}</td>
-                  <td>{a.revoked_at ? <span className="muted">בוטל</span> : <span className="ok">פעיל</span>}</td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
-                      <button className="btn btn-sm" onClick={() => copy(a.token)} disabled={!!a.revoked_at}>
-                        {copiedToken === a.token ? 'הועתק ✓' : 'העתק'}
-                      </button>
-                      {a.revoked_at ? (
-                        <button className="btn btn-sm" onClick={() => update(a.token, { revoked: false })}>שחזר</button>
-                      ) : (
-                        <button className="btn btn-sm" onClick={() => update(a.token, { revoked: true })}>בטל</button>
-                      )}
-                      <button className="btn btn-sm danger" onClick={() => remove(a.token)}>מחק</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    עריכת לידים
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.88rem', cursor: a.revoked_at ? 'not-allowed' : 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={a.can_view_metrics}
+                      disabled={!!a.revoked_at}
+                      onChange={(e) => update(a.token, { can_view_metrics: e.target.checked })}
+                      style={{ accentColor: 'var(--primary)' }}
+                    />
+                    צפייה בביצועים
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.88rem', cursor: a.revoked_at ? 'not-allowed' : 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={a.can_view_creatives}
+                      disabled={!!a.revoked_at}
+                      onChange={(e) => update(a.token, { can_view_creatives: e.target.checked })}
+                      style={{ accentColor: 'var(--primary)' }}
+                    />
+                    צפייה בקריאטיבים
+                  </label>
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                  {a.revoked_at ? (
+                    <button className="btn btn-sm" onClick={() => update(a.token, { revoked: false })}>שחזר</button>
+                  ) : (
+                    <button className="btn btn-sm" onClick={() => update(a.token, { revoked: true })}>בטל</button>
+                  )}
+                  <button className="btn btn-sm danger" onClick={() => remove(a.token)}>מחק</button>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>

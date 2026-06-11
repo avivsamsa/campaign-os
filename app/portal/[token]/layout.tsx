@@ -26,6 +26,12 @@ export default async function PortalLayout({
         <div className="portal-brand">פורטל — {client?.name ?? 'לקוח'}</div>
         <nav className="portal-nav">
           <Link href={`/portal/${params.token}/leads`}>לידים</Link>
+          {access.can_view_metrics && (
+            <Link href={`/portal/${params.token}/performance`}>ביצועים</Link>
+          )}
+          {access.can_view_creatives && (
+            <Link href={`/portal/${params.token}/creatives`}>קריאטיבים</Link>
+          )}
         </nav>
       </header>
       <main className="container portal-main">{children}</main>
