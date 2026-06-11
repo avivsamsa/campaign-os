@@ -265,7 +265,7 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
               const d = l.created_at ? new Date(l.created_at) : null;
               return (
                 <tr key={l.id}>
-                  <td>
+                  <td className="m-date">
                     {d ? (
                       <div className="cell-stack">
                         <span>{d.toISOString().slice(0, 10)}</span>
@@ -277,13 +277,13 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
                       '—'
                     )}
                   </td>
-                  <td>
+                  <td className="m-name">
                     <div className="line-clamp-2" title={l.name ?? ''}>
                       {l.name ?? '—'}
                     </div>
                   </td>
-                  <td>{l.phone ?? '—'}</td>
-                  <td>
+                  <td className="m-phone">{l.phone ?? '—'}</td>
+                  <td className="m-thumb">
                     {l.creative_thumb ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -296,12 +296,12 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
                       <span className="muted" style={{ fontSize: '0.7rem' }}>—</span>
                     )}
                   </td>
-                  <td>
+                  <td className="m-creative">
                     <div className="line-clamp-2" title={l.creative_label ?? ''}>
                       {l.creative_label ?? '—'}
                     </div>
                   </td>
-                  <td>
+                  <td className="m-status">
                     <select
                       className="select select-sm"
                       value={r.status}
@@ -314,15 +314,16 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
                       ))}
                     </select>
                   </td>
-                  <td>
+                  <td className="m-deal">
                     <input
                       className="input input-sm"
                       inputMode="decimal"
+                      placeholder="deal_value"
                       value={r.deal_value}
                       onChange={(e) => setRow(l.id, { deal_value: e.target.value, saved: false })}
                     />
                   </td>
-                  <td>
+                  <td className="m-notes">
                     <button
                       className="btn btn-sm"
                       onClick={() => setNotesFor(l)}
@@ -331,7 +332,7 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
                       💬 {getCount(l) > 0 ? getCount(l) : ''}
                     </button>
                   </td>
-                  <td>
+                  <td className="m-save">
                     <button className="btn btn-sm primary" onClick={() => saveLead(l.id)} disabled={r.saving}>
                       {r.saving ? '...' : r.saved ? '✓' : 'שמור'}
                     </button>

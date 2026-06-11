@@ -317,28 +317,192 @@ body.portal-mode .app-main {
 }
 
 @media (max-width: 760px) {
+  /* ===== Shell & sidebar ===== */
   .sidebar {
-    position: static;
+    position: sticky;
+    top: 0;
     width: auto;
     height: auto;
     border-left: none;
     border-bottom: 1px solid var(--border);
-    padding: 0.75rem 0;
+    padding: 0.5rem 0;
+    z-index: 10;
+    overflow-x: auto;
+  }
+  .sidebar-brand {
+    padding: 0 1rem 0.4rem;
+    font-size: 1rem;
   }
   .sidebar-nav {
     flex-direction: row;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    padding: 0 0.5rem;
+    gap: 0.15rem;
   }
   .sidebar-nav a {
     border-right: none;
     border-bottom: 3px solid transparent;
+    padding: 0.45rem 0.7rem;
+    font-size: 0.88rem;
+    white-space: nowrap;
   }
   .sidebar-nav a.active {
     border-right-color: transparent;
     border-bottom-color: var(--primary);
+    background: transparent;
   }
   .app-main {
     margin-right: 0;
+  }
+
+  /* ===== Container padding ===== */
+  .container {
+    padding: 1rem 0.85rem 3rem;
+  }
+  h1 {
+    font-size: 1.3rem;
+  }
+
+  /* ===== Toolbars: stack vertically, full width ===== */
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  .toolbar .field {
+    flex: 1 1 auto !important;
+    width: 100%;
+    margin-bottom: 0;
+  }
+  .toolbar .field .select,
+  .toolbar .field .input {
+    width: 100%;
+  }
+  .bulk-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* ===== Tabs: horizontal scroll, never break ===== */
+  .tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tab {
+    flex-shrink: 0;
+  }
+
+  /* ===== Portal header tighter ===== */
+  .portal-header {
+    padding: 0.7rem 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .portal-brand {
+    font-size: 0.95rem;
+  }
+
+  /* ===== Compact leads table → mobile card layout ===== */
+  .table-scroll {
+    border: none;
+    background: transparent;
+    overflow: visible;
+    max-height: none;
+    min-height: 0;
+  }
+  .table.table-compact {
+    border: none;
+    background: transparent;
+    display: block;
+    table-layout: auto;
+  }
+  .table.table-compact thead {
+    display: none;
+  }
+  .table.table-compact tbody {
+    display: block;
+  }
+  .table.table-compact tr {
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    grid-template-areas:
+      'thumb name'
+      'thumb phone'
+      'date  date'
+      'creative creative'
+      'status status'
+      'deal   deal'
+      'notes  save';
+    column-gap: 0.85rem;
+    row-gap: 0.45rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--card);
+    margin-bottom: 0.85rem;
+    width: auto !important;
+  }
+  .table.table-compact tr.no-edit {
+    grid-template-areas:
+      'thumb name'
+      'thumb phone'
+      'date  date'
+      'creative creative'
+      'status status'
+      'deal   deal'
+      'notes  notes';
+  }
+  .table.table-compact tbody tr:hover {
+    background: var(--card);
+  }
+  .table.table-compact td {
+    display: block;
+    padding: 0 !important;
+    border: none !important;
+    white-space: normal;
+    min-width: 0;
+  }
+  .table.table-compact .m-thumb { grid-area: thumb; }
+  .table.table-compact .m-name {
+    grid-area: name;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .table.table-compact .m-phone {
+    grid-area: phone;
+    color: var(--muted);
+    font-size: 0.85rem;
+    direction: ltr;
+    text-align: right;
+  }
+  .table.table-compact .m-date {
+    grid-area: date;
+    color: var(--muted);
+    font-size: 0.78rem;
+  }
+  .table.table-compact .m-date .cell-stack {
+    flex-direction: row;
+    gap: 0.5rem;
+    align-items: baseline;
+  }
+  .table.table-compact .m-creative {
+    grid-area: creative;
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+  .table.table-compact .m-status { grid-area: status; }
+  .table.table-compact .m-deal   { grid-area: deal; }
+  .table.table-compact .m-notes  { grid-area: notes; justify-self: start; }
+  .table.table-compact .m-save   { grid-area: save;  justify-self: end; }
+  .table.table-compact .m-notes .btn,
+  .table.table-compact .m-save .btn {
+    min-width: 90px;
+  }
+  .table.table-compact .lead-thumb {
+    width: 64px;
+    height: 64px;
   }
 }
 

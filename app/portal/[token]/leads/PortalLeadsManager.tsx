@@ -189,8 +189,8 @@ export default function PortalLeadsManager({
                 const r = rows[l.id];
                 const d = l.created_at ? new Date(l.created_at) : null;
                 return (
-                  <tr key={l.id}>
-                    <td>
+                  <tr key={l.id} className={canEdit ? '' : 'no-edit'}>
+                    <td className="m-date">
                       {d ? (
                         <div className="cell-stack">
                           <span>{d.toISOString().slice(0, 10)}</span>
@@ -198,11 +198,11 @@ export default function PortalLeadsManager({
                         </div>
                       ) : '—'}
                     </td>
-                    <td>
+                    <td className="m-name">
                       <div className="line-clamp-2" title={l.name ?? ''}>{l.name ?? '—'}</div>
                     </td>
-                    <td>{l.phone ?? '—'}</td>
-                    <td>
+                    <td className="m-phone">{l.phone ?? '—'}</td>
+                    <td className="m-thumb">
                       {l.creative_thumb ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={l.creative_thumb} alt="" className="lead-thumb" title={l.creative_label ?? ''} />
@@ -210,24 +210,24 @@ export default function PortalLeadsManager({
                         <span className="muted" style={{ fontSize: '0.7rem' }}>—</span>
                       )}
                     </td>
-                    <td>
+                    <td className="m-creative">
                       <div className="line-clamp-2" title={l.creative_label ?? ''}>{l.creative_label ?? '—'}</div>
                     </td>
-                    <td>
+                    <td className="m-status">
                       <select className="select select-sm" value={r.status} disabled={!canEdit} onChange={(e) => setRow(l.id, { status: e.target.value, saved: false })}>
                         {LEAD_STATUSES.map((s) => (<option key={s} value={s}>{STATUS_LABEL[s]}</option>))}
                       </select>
                     </td>
-                    <td>
-                      <input className="input input-sm" inputMode="decimal" disabled={!canEdit} value={r.deal_value} onChange={(e) => setRow(l.id, { deal_value: e.target.value, saved: false })} />
+                    <td className="m-deal">
+                      <input className="input input-sm" inputMode="decimal" placeholder="deal_value" disabled={!canEdit} value={r.deal_value} onChange={(e) => setRow(l.id, { deal_value: e.target.value, saved: false })} />
                     </td>
-                    <td>
+                    <td className="m-notes">
                       <button className="btn btn-sm" onClick={() => setNotesFor(l)} title="צפייה והוספת הערות">
                         💬 {getCount(l) > 0 ? getCount(l) : ''}
                       </button>
                     </td>
                     {canEdit && (
-                      <td>
+                      <td className="m-save">
                         <button className="btn btn-sm primary" onClick={() => saveLead(l.id)} disabled={r.saving}>
                           {r.saving ? '...' : r.saved ? '✓' : 'שמור'}
                         </button>
