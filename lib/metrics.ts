@@ -40,6 +40,14 @@ export type MetricsRow = {
   clicks: number;
   ctr: number; // אחוז
   cpm: number;
+  leads: number; // נתון נטו — ספירת לידים אמיתיים (מטבלת leads) בטווח
+  cpc: number | null; // spend / clicks — null כשאין קליקים
+  cpl: number | null; // spend / leads — null כשאין לידים (0 היה מטעה במיון)
+  hook_rate: number | null; // 3-sec plays / impressions (%) — null לקריאטיב לא-וידאו
+  thruplay_rate: number | null; // ThruPlays / impressions (%)
+  frequency: number | null; // impressions / reach — סימן שחיקה
+  revenue: number; // הכנסה — סכום deal_value של לידים סגורים (מודל lead) / purchase_value
+  closes: number; // מספר רכישות/עסקאות סגורות בטווח
   computed: Record<string, number | null>;
 };
 
@@ -80,6 +88,37 @@ function ratios(s: { spend: number; impressions: number; clicks: number }): {
   return { ctr, cpm };
 }
 
+/** מדדי עלות נגזרים — null כשהמכנה 0 (0 היה נראה כ"הכי טוב" במיון). */
+function costRatios(s: { spend: number; clicks: number; leads: number }): {
+  cpc: number | null;
+  cpl: number | null;
+} {
+  return {
+    cpc: s.clicks > 0 ? s.spend / s.clicks : null,
+    cpl: s.leads > 0 ? s.spend / s.leads : null,
+  };
+}
+
+/**
+ * מדדי מעורבות וידאו.
+ * hook_rate = 3-sec plays / impressions · thruplay_rate = ThruPlays / impressions.
+ * null כשאין פעילות וידאו (למשל קריאטיב תמונה) — כדי לא להציג 0% מטעה.
+ * frequency = impressions / reach (קירוב — reach מסוכם על-פני ימים אינו dedup מלא).
+ */
+function videoRatios(s: {
+  impressions: number;
+  reach: number;
+  videoPlays: number;
+  videoThruplays: number;
+}): { hook_rate: number | null; thruplay_rate: number | null; frequency: number | null } {
+  const hasVideo = s.videoPlays > 0 || s.videoThruplays > 0;
+  return {
+    hook_rate: hasVideo && s.impressions > 0 ? (s.videoPlays / s.impressions) * 100 : null,
+    thruplay_rate: hasVideo && s.impressions > 0 ? (s.videoThruplays / s.impressions) * 100 : null,
+    frequency: s.reach > 0 ? s.impressions / s.reach : null,
+  };
+}
+
 type Sums = {
   spend: number;
   impressions: number;
@@ -89,6 +128,8 @@ type Sums = {
   orders: number; // purchases (מודל purchase)
   leads: number; // ספירת לידים (מודל lead)
   closes: number; // לידים סגורים (מודל lead)
+  videoPlays: number; // 3-sec plays (Hook rate)
+  videoThruplays: number; // ThruPlay (החזקה)
 };
 
 const ZERO_SUMS: Sums = {
@@ -100,6 +141,8 @@ const ZERO_SUMS: Sums = {
   orders: 0,
   leads: 0,
   closes: 0,
+  videoPlays: 0,
+  videoThruplays: 0,
 };
 
 /** scope של נוסחאות לשורה: כמויות מסוכמות + יחסים + allocated_fee (pro-rata לפי spend). */
@@ -128,6 +171,14 @@ const EMPTY_TOTALS: MetricsTotals = {
   clicks: 0,
   ctr: 0,
   cpm: 0,
+  leads: 0,
+  cpc: null,
+  cpl: null,
+  hook_rate: null,
+  thruplay_rate: null,
+  frequency: null,
+  revenue: 0,
+  closes: 0,
   computed: {},
 };
 
@@ -253,11 +304,15 @@ export async function queryMetrics(
     clicks: number;
     purchases: number;
     purchase_value: number;
+    video_plays: number;
+    video_thruplays: number;
   };
   for (const ids of chunk(adIds, 100)) {
     const { data, error } = await sb
       .from('daily_metrics')
-      .select('ad_id, date, spend, impressions, reach, clicks, purchases, purchase_value')
+      .select(
+        'ad_id, date, spend, impressions, reach, clicks, purchases, purchase_value, video_plays, video_thruplays',
+      )
       .in('ad_id', ids)
       .gte('date', since)
       .lte('date', until);
@@ -272,6 +327,8 @@ export async function queryMetrics(
       b.sums.impressions += num(r.impressions);
       b.sums.reach += num(r.reach);
       b.sums.clicks += num(r.clicks);
+      b.sums.videoPlays += num(r.video_plays);
+      b.sums.videoThruplays += num(r.video_thruplays);
       if (isPurchase) {
         b.sums.revenue += num(r.purchase_value);
         b.sums.orders += num(r.purchases);
@@ -325,6 +382,8 @@ export async function queryMetrics(
 
   const rows: MetricsRow[] = [...buckets.entries()].map(([key, b]) => {
     const r = ratios(b.sums);
+    const cr = costRatios(b.sums);
+    const vr = videoRatios(b.sums);
     const run = runFormulas(formulaScope(b.sums, agencyFee, totalSpend), variables, formulas);
     Object.assign(formula_errors, run.errors);
     return {
@@ -336,6 +395,14 @@ export async function queryMetrics(
       clicks: b.sums.clicks,
       ctr: r.ctr,
       cpm: r.cpm,
+      leads: b.sums.leads,
+      cpc: cr.cpc,
+      cpl: cr.cpl,
+      hook_rate: vr.hook_rate,
+      thruplay_rate: vr.thruplay_rate,
+      frequency: vr.frequency,
+      revenue: b.sums.revenue,
+      closes: b.sums.closes,
       computed: run.values,
     };
   });
@@ -357,10 +424,14 @@ export async function queryMetrics(
       orders: s.orders + b.sums.orders,
       leads: s.leads + b.sums.leads,
       closes: s.closes + b.sums.closes,
+      videoPlays: s.videoPlays + b.sums.videoPlays,
+      videoThruplays: s.videoThruplays + b.sums.videoThruplays,
     }),
     { ...ZERO_SUMS },
   );
   const rollupRatios = ratios(totalSums);
+  const rollupCost = costRatios(totalSums);
+  const rollupVideo = videoRatios(totalSums);
   const rollupRun = runFormulas(formulaScope(totalSums, agencyFee, totalSpend), variables, formulas);
   Object.assign(formula_errors, rollupRun.errors);
 
@@ -371,6 +442,14 @@ export async function queryMetrics(
     clicks: totalSums.clicks,
     ctr: rollupRatios.ctr,
     cpm: rollupRatios.cpm,
+    leads: totalSums.leads,
+    cpc: rollupCost.cpc,
+    cpl: rollupCost.cpl,
+    hook_rate: rollupVideo.hook_rate,
+    thruplay_rate: rollupVideo.thruplay_rate,
+    frequency: rollupVideo.frequency,
+    revenue: totalSums.revenue,
+    closes: totalSums.closes,
     computed: rollupRun.values,
   };
 

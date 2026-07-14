@@ -44,6 +44,12 @@ function actionValue(arr: Json, type: string): number {
   return hit ? num(hit.value) : 0;
 }
 
+/** סכום כל ה-values במערך actions (למשל video_thruplay_watched_actions). */
+function actionSum(arr: Json): number {
+  if (!Array.isArray(arr)) return 0;
+  return arr.reduce((s, a) => s + num(a.value), 0);
+}
+
 /** ממפה את field_data של ליד leadgen לשדות שלנו (שמות שדה משתנים בין טפסים). */
 function leadFields(fieldData: Json): { name: string | null; phone: string | null; email: string | null } {
   const map: Record<string, string> = {};
@@ -150,8 +156,40 @@ export async function syncClient(clientId: string, range?: DateRange): Promise<S
   // כולל שדות ויזואליים: thumbnail (תצוגה מקדימה) + נכס מלא (image_url / source של וידאו).
   const metaAds = await metaGetAll(`${actPath}/ads`, {
     fields:
-      'id,name,status,adset_id,adset{name},campaign_id,creative{id,name,thumbnail_url,image_url,video_id,object_story_spec}',
+      'id,name,status,adset_id,adset{name},campaign_id,creative{id,name,thumbnail_url,image_url,image_hash,video_id,object_story_spec,asset_feed_spec{images}}',
   });
+
+  // חילוץ image_hash מקריאטיב — מכסה מודעות תמונה רגילות, שיתוף פוסט,
+  // וקריאטיב דינמי (asset_feed_spec.images[]), שם התמונה לא נחשפת ב-image_hash הרגיל.
+  const creativeImageHash = (cr: Json): string | null =>
+    cr?.image_hash ||
+    cr?.object_story_spec?.link_data?.image_hash ||
+    cr?.asset_feed_spec?.images?.[0]?.hash ||
+    null;
+
+  // מיפוי image_hash -> URL של הקובץ המקורי (הרזולוציה הגבוהה ביותר שמטא שומרת).
+  // image_url של הקריאטיב הוא לרוב רינדור מוקטן/דחוס; adimages מחזיר את המקור שהועלה.
+  // חשוב לא רק לתצוגה חדה אלא גם לניתוח עתידי של הקריאטיב (vision).
+  const imageHashes = new Set<string>();
+  for (const a of metaAds) {
+    const h = creativeImageHash(a.creative);
+    if (h) imageHashes.add(String(h));
+  }
+  const originalByHash = new Map<string, string>();
+  if (imageHashes.size > 0) {
+    try {
+      const imgs = await metaGetAll(`${actPath}/adimages`, {
+        hashes: JSON.stringify([...imageHashes]),
+        fields: 'hash,permalink_url,url,width,height',
+      });
+      for (const img of imgs) {
+        const url = img.permalink_url || img.url || null;
+        if (img.hash && url) originalByHash.set(String(img.hash), url);
+      }
+    } catch {
+      // adimages לא זמין (הרשאה/סוג קריאטיב) — נופלים ל-image_url בהמשך.
+    }
+  }
 
   // מידע ויזואלי פר מזהה קריאטיב: thumbnail + נכס מלא + סוג ('image'|'video').
   type CreativeVisual = {
@@ -165,7 +203,7 @@ export async function syncClient(clientId: string, range?: DateRange): Promise<S
     const cr = a.creative;
     if (!cr?.id || creativeInfo.has(cr.id)) continue;
 
-    const thumb = cr.thumbnail_url || cr.image_url || null;
+    let thumb = cr.thumbnail_url || cr.image_url || null;
     const videoId = cr.video_id || cr.object_story_spec?.video_data?.video_id || null;
 
     let full_asset_url: string | null = null;
@@ -173,15 +211,36 @@ export async function syncClient(clientId: string, range?: DateRange): Promise<S
     if (videoId) {
       asset_type = 'video';
       try {
-        const v = await metaGet(String(videoId), { fields: 'source,permalink_url' });
-        full_asset_url = v.source || v.permalink_url || null;
+        const v = await metaGet(String(videoId), {
+          fields: 'source,permalink_url,picture,thumbnails{uri,width,height,is_preferred}',
+        });
+        // Meta כבר לא חושף source לרוב מודעות הווידאו/רילס. permalink_url מגיע יחסי
+        // (/reel/…) — הופכים למוחלט כדי שה-UI יוכל לפתוח אותו בפייסבוק (לא לנגן inline).
+        const permalink = v.permalink_url
+          ? v.permalink_url.startsWith('/')
+            ? `https://www.facebook.com${v.permalink_url}`
+            : v.permalink_url
+          : null;
+        full_asset_url = v.source || permalink || null;
+        // poster לגריד באיכות מלאה — thumbnails מציע עד ~2160px; ברירת המחדל של
+        // thumbnail_url היא 64px (מטושטש). מעדיפים את הפריים המסומן is_preferred.
+        const vthumbs: Json[] = v.thumbnails?.data ?? [];
+        const preferred = vthumbs.find((t) => t.is_preferred) ?? vthumbs[0];
+        const poster = preferred?.uri || v.picture || null;
+        if (poster) thumb = poster;
       } catch {
         full_asset_url = null; // נכס מלא לא זמין — ה-UI ייפול ל-thumbnail
       }
     } else {
       asset_type = 'image';
+      const hash = creativeImageHash(cr);
+      const original = hash ? originalByHash.get(String(hash)) : null;
       full_asset_url =
-        cr.image_url || cr.object_story_spec?.link_data?.picture || cr.thumbnail_url || null;
+        original ||
+        cr.image_url ||
+        cr.object_story_spec?.link_data?.picture ||
+        cr.thumbnail_url ||
+        null;
     }
 
     // שם המודעה (ad.name) הוא השם המשמעותי בחשבון — מועדף על שם ה-creative הגולמי של Meta.
@@ -314,7 +373,8 @@ export async function syncClient(clientId: string, range?: DateRange): Promise<S
     level: 'ad',
     time_increment: 1,
     time_range: JSON.stringify({ since, until }),
-    fields: 'ad_id,spend,impressions,reach,clicks,ctr,cpm,actions,action_values',
+    fields:
+      'ad_id,spend,impressions,reach,clicks,ctr,cpm,actions,action_values,video_thruplay_watched_actions',
   });
 
   const dmRows: Json[] = [];
@@ -332,6 +392,9 @@ export async function syncClient(clientId: string, range?: DateRange): Promise<S
       cpm: num(row.cpm),
       purchases: Math.round(actionValue(row.actions, 'omni_purchase')),
       purchase_value: actionValue(row.action_values, 'omni_purchase'),
+      // מדדי וידאו: 3-sec plays (video_view) ל-Hook rate · ThruPlay להחזקה
+      video_plays: Math.round(actionValue(row.actions, 'video_view')),
+      video_thruplays: Math.round(actionSum(row.video_thruplay_watched_actions)),
     });
   }
   let dailyMetricsWritten = 0;

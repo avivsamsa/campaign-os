@@ -66,6 +66,10 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if ('tags' in body) {
     update.tags = sanitizeTags((body.tags as Record<string, unknown>) ?? {});
   }
+  if ('product_id' in body) {
+    const p = (body.product_id as string)?.toString().trim();
+    update.product_id = p || null;
+  }
 
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: 'אין שדות לעדכון' }, { status: 400 });

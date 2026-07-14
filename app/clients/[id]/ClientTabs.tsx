@@ -8,7 +8,7 @@ import ClientEditor from './ClientEditor';
 import ProfitConfigEditor from './ProfitConfigEditor';
 import SyncButton from './SyncButton';
 import LeadsManager from './leads/LeadsManager';
-import PortalAccessEditor from './PortalAccessEditor';
+import PortalSettingsEditor from './PortalSettingsEditor';
 
 type TabId = 'overview' | 'brain' | 'profit' | 'leads' | 'sync' | 'portal';
 
@@ -58,7 +58,7 @@ export default function ClientTabs({ client, brain, profitConfig, leads }: Props
       )}
       {tab === 'leads' && <LeadsManager clientId={client.id} initialLeads={leads} />}
       {tab === 'sync' && <SyncButton clientId={client.id} />}
-      {tab === 'portal' && <PortalAccessEditor clientId={client.id} />}
+      {tab === 'portal' && <PortalSettingsEditor clientId={client.id} />}
     </>
   );
 }

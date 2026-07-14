@@ -18,6 +18,29 @@ export const LEAD_STATUSES = [
 ] as const;
 export type LeadStatus = (typeof LEAD_STATUSES)[number];
 
+/**
+ * תצוגת מספר טלפון ישראלי: +972523456789 → 052-345-6789.
+ * אם המספר לא מגיע בתבנית +972 (מדינה אחרת / פורמט לא צפוי) — מוחזר כמו שהוא.
+ * לשימוש בתצוגה בלבד; קישורי tel:/wa.me משתמשים במספר המקורי.
+ */
+export function formatPhone(raw: string | null | undefined): string {
+  if (!raw) return raw ?? '';
+  const digits = raw.replace(/\D/g, '');
+  if (!digits.startsWith('972')) return raw; // לא תבנית ישראלית — משאירים כמו שהגיע
+  let rest = digits.slice(3);
+  if (rest.startsWith('0')) rest = rest.slice(1);
+  const local = `0${rest}`;
+  if (/^0\d{9}$/.test(local)) {
+    // נייד: 05X-XXX-XXXX
+    return `${local.slice(0, 3)}-${local.slice(3, 6)}-${local.slice(6)}`;
+  }
+  if (/^0\d{8}$/.test(local)) {
+    // קווי: 0X-XXX-XXXX
+    return `${local.slice(0, 2)}-${local.slice(2, 5)}-${local.slice(5)}`;
+  }
+  return raw; // אורך לא צפוי — משאירים כמו שהגיע
+}
+
 export type EnrichedLead = {
   id: string;
   meta_lead_id: string | null;
