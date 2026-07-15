@@ -6,7 +6,7 @@ export const metadata: Metadata = {
 };
 
 const UPDATED = '16 ביולי 2026';
-const CONTACT_EMAIL = 'avivsamsa15@gmail.com';
+const CONTACT_EMAIL = 'm@avivsamsa.co.il';
 
 export default function PrivacyPage() {
   return (
