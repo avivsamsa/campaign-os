@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { getSupabaseClient } from '@/lib/supabase';
-import { metaGet } from '@/lib/meta';
-import { leadFields } from '@/lib/sync';
+import { ingestLead } from '@/lib/lead-ingest';
 
 export const dynamic = 'force-dynamic';
 
@@ -86,84 +84,15 @@ export async function POST(req: Request) {
   }
 
   // עיבוד מקבילי. תמיד 200 — הסנכרון היומי משלים כל ליד שנכשל כאן (בלי אובדן).
-  const results = await Promise.all(changes.map(processLead));
-  return NextResponse.json({ ok: true, inserted: results.filter(Boolean).length });
-}
-
-async function processLead(c: Change): Promise<boolean> {
-  const sb = getSupabaseClient();
-  try {
-    // 1. משיכת הליד המלא ממטא (field_data נמצא רק כאן, לא ב-payload)
-    const lead = await metaGet(c.leadgen_id, {
-      fields: 'id,created_time,field_data,form_id,ad_id',
-    });
-    const formId = (lead.form_id ? String(lead.form_id) : c.form_id) ?? null;
-    const adId = (lead.ad_id ? String(lead.ad_id) : c.ad_id) ?? null;
-    const f = leadFields(lead.field_data);
-    const createdIso = lead.created_time
-      ? new Date(lead.created_time).toISOString()
-      : c.created_time
-        ? new Date(c.created_time * 1000).toISOString()
-        : new Date().toISOString();
-
-    // 2. פתרון הלקוח + ייחוס (ad → campaign → client, ובנפילה form → client)
-    let clientId: string | null = null;
-    let adUuid: string | null = null;
-    let campUuid: string | null = null;
-    if (adId) {
-      const { data: ad } = await sb
-        .from('ads')
-        .select('id, campaign_id')
-        .eq('meta_ad_id', adId)
-        .maybeSingle();
-      if (ad) {
-        adUuid = ad.id as string;
-        campUuid = (ad.campaign_id as string) ?? null;
-        if (campUuid) {
-          const { data: camp } = await sb
-            .from('campaigns')
-            .select('client_id')
-            .eq('id', campUuid)
-            .maybeSingle();
-          clientId = (camp?.client_id as string) ?? null;
-        }
-      }
-    }
-    if (!clientId && formId) {
-      const { data: lf } = await sb
-        .from('lead_forms')
-        .select('client_id')
-        .eq('id', formId)
-        .maybeSingle();
-      clientId = (lf?.client_id as string) ?? null;
-    }
-    if (!clientId) return false; // לא ניתן למפות → הסנכרון היומי יטפל
-
-    // 3. מניעת כפילות (webhook עלול לירות פעמיים)
-    const { data: exists } = await sb
-      .from('leads')
-      .select('id')
-      .eq('client_id', clientId)
-      .eq('meta_lead_id', c.leadgen_id)
-      .maybeSingle();
-    if (exists) return false;
-
-    // 4. הכנסה
-    const { error } = await sb.from('leads').insert({
-      client_id: clientId,
-      campaign_id: campUuid,
-      ad_id: adUuid,
-      meta_lead_id: c.leadgen_id,
-      form_id: formId,
-      name: f.name,
-      phone: f.phone,
-      email: f.email,
-      status: 'new',
-      source: 'meta',
-      created_at: createdIso,
-    });
-    return !error;
-  } catch {
-    return false; // best-effort — הסנכרון היומי משלים
-  }
+  const results = await Promise.all(
+    changes.map((c) =>
+      ingestLead({
+        leadgen_id: c.leadgen_id,
+        form_id: c.form_id ?? null,
+        ad_id: c.ad_id ?? null,
+        created_time: c.created_time ? new Date(c.created_time * 1000).toISOString() : null,
+      }),
+    ),
+  );
+  return NextResponse.json({ ok: true, inserted: results.filter((r) => r === 'inserted').length });
 }
