@@ -38,9 +38,11 @@ const nfIls = new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 });
 export default function PortalLeadsManager({
   initialLeads,
   canEdit,
+  categories,
 }: {
   initialLeads: EnrichedLead[];
   canEdit: boolean;
+  categories: { id: string; name: string }[];
 }) {
   const router = useRouter();
   const [rows, setRows] = useState<Record<string, RowState>>(() =>
@@ -57,15 +59,95 @@ export default function PortalLeadsManager({
     ),
   );
 
-  const [filterCampaign, setFilterCampaign] = useState('');
-  const [filterAdset, setFilterAdset] = useState('');
-  const [filterAd, setFilterAd] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  // קטגוריות עם ספירות (+ "אחר" ללידים ללא קטגוריה) — לשער הבחירה
+  const gateCategories = useMemo(() => {
+    const withCount = categories.map((c) => ({
+      id: c.id,
+      name: c.name,
+      count: initialLeads.filter((l) => l.category_id === c.id).length,
+    }));
+    const uncategorized = initialLeads.filter((l) => !l.category_id).length;
+    if (uncategorized > 0) withCount.push({ id: '__none__', name: 'אחר', count: uncategorized });
+    return withCount.filter((c) => c.count > 0);
+  }, [categories, initialLeads]);
+
+  const needsGate = gateCategories.length > 1;
+
+  // הלידים הרלוונטיים לפי הקטגוריה שנבחרה (או הכל אם אין שער)
+  const categoryLeads = useMemo(() => {
+    if (!needsGate || !selectedCategory) return initialLeads;
+    if (selectedCategory === '__none__') return initialLeads.filter((l) => !l.category_id);
+    return initialLeads.filter((l) => l.category_id === selectedCategory);
+  }, [initialLeads, needsGate, selectedCategory]);
+
+  const selectedCategoryName =
+    selectedCategory === '__none__'
+      ? 'אחר'
+      : categories.find((c) => c.id === selectedCategory)?.name ?? '';
   const [selected, setSelected] = useState<EnrichedLead | null>(null);
   const [notesCounts, setNotesCounts] = useState<Record<string, number>>({});
   const [errMsg, setErrMsg] = useState('');
   // פופאפ סכום רכישה — נפתח כשמשנים סטטוס ל"רכישה" (closed) או בעריכת סכום קיים
   const [amountModal, setAmountModal] = useState<{ lead: EnrichedLead; value: string } | null>(null);
+
+  // פופאפ סיבת "לא רלוונטי" — נפתח כשמשנים סטטוס ל-irrelevant. חובה לבחור סיבה.
+  type Reason = { id: string; label: string };
+  const [reasonModal, setReasonModal] = useState<{
+    lead: EnrichedLead;
+    category: string | null;
+    admin: Reason[];
+    client: Reason[];
+    loading: boolean;
+    showOther: boolean;
+    newLabel: string;
+    saving: boolean;
+  } | null>(null);
+
+  async function openReasonModal(l: EnrichedLead) {
+    const category = l.category_id ?? null;
+    setReasonModal({ lead: l, category, admin: [], client: [], loading: true, showOther: false, newLabel: '', saving: false });
+    try {
+      const res = await fetch(`/api/portal/reasons?category=${category ?? ''}`);
+      const d = await res.json();
+      const admin = (d.admin ?? []) as Reason[];
+      const clientR = (d.client ?? []) as Reason[];
+      setReasonModal((m) => (m && m.lead.id === l.id
+        ? { ...m, admin, client: clientR, loading: false, showOther: admin.length === 0 }
+        : m));
+    } catch {
+      setReasonModal((m) => (m ? { ...m, loading: false, showOther: true } : m));
+    }
+  }
+
+  function pickReason(reasonId: string) {
+    if (!reasonModal) return;
+    saveLead(reasonModal.lead.id, { status: 'irrelevant' }, reasonId);
+    setReasonModal(null);
+  }
+
+  async function addOtherReason() {
+    if (!reasonModal) return;
+    const label = reasonModal.newLabel.trim();
+    if (!label) return;
+    setReasonModal({ ...reasonModal, saving: true });
+    try {
+      const res = await fetch('/api/portal/reasons', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label, category: reasonModal.category }),
+      });
+      const d = await res.json();
+      if (!res.ok || !d.reason) { setErrMsg(d.error ?? 'הוספת סיבה נכשלה'); setReasonModal((m) => m && { ...m, saving: false }); return; }
+      pickReason(d.reason.id as string);
+    } catch (err) {
+      setErrMsg(err instanceof Error ? err.message : String(err));
+      setReasonModal((m) => m && { ...m, saving: false });
+    }
+  }
 
   // סטטוסים מותאמים אישית של הלקוח
   const [customStatuses, setCustomStatuses] = useState<CustomStatus[]>([]);
@@ -128,65 +210,51 @@ export default function PortalLeadsManager({
     );
   }
 
-  const campaigns = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const l of initialLeads) if (l.campaign_id) m.set(l.campaign_id, l.campaign_label || l.campaign_id);
-    return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1]));
-  }, [initialLeads]);
-
-  const adsets = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const l of initialLeads) {
-      if (filterCampaign && l.campaign_id !== filterCampaign) continue;
-      if (l.meta_adset_id) m.set(l.meta_adset_id, l.adset_label || l.meta_adset_id);
-    }
-    return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1]));
-  }, [initialLeads, filterCampaign]);
-
-  const ads = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const l of initialLeads) {
-      if (filterCampaign && l.campaign_id !== filterCampaign) continue;
-      if (filterAdset && l.meta_adset_id !== filterAdset) continue;
-      if (l.ad_id) m.set(l.ad_id, l.ad_label || l.creative_label || l.ad_id);
-    }
-    return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1]));
-  }, [initialLeads, filterCampaign, filterAdset]);
-
-  const filteredLeads = useMemo(() => {
+  // סינון חיפוש (שם/טלפון) — בסיס הן לאנליטיקות והן לרשימה (בתוך הקטגוריה הנבחרת)
+  const searchFiltered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return initialLeads.filter(
+    if (!q) return categoryLeads;
+    const qd = q.replace(/\D/g, '');
+    return categoryLeads.filter(
       (l) =>
-        (!filterCampaign || l.campaign_id === filterCampaign) &&
-        (!filterAdset || l.meta_adset_id === filterAdset) &&
-        (!filterAd || l.ad_id === filterAd) &&
-        (!q ||
-          (l.name ?? '').toLowerCase().includes(q) ||
-          (l.phone ?? '').replace(/\D/g, '').includes(q.replace(/\D/g, ''))),
+        (l.name ?? '').toLowerCase().includes(q) ||
+        (qd && (l.phone ?? '').replace(/\D/g, '').includes(qd)),
     );
-  }, [initialLeads, filterCampaign, filterAdset, filterAd, search]);
+  }, [categoryLeads, search]);
 
-  // סיכום — ספירה לפי סטטוס + סה"כ נסגר, על בסיס מצב השורות הנוכחי
+  // הרשימה מסוננת גם לפי פילטר הסטטוס הפעיל (הצ'יפ שנבחר)
+  const filteredLeads = useMemo(() => {
+    if (!statusFilter) return searchFiltered;
+    return searchFiltered.filter((l) => (rows[l.id]?.status ?? l.status) === statusFilter);
+  }, [searchFiltered, statusFilter, rows]);
+
+  // אנליטיקות + ספירה לפי סטטוס — מחושבות על כל הלידים בטווח החיפוש (לא מושפעות מפילטר הסטטוס)
   const summary = useMemo(() => {
     const counts: Record<string, number> = {};
     let closedRevenue = 0;
-    for (const l of filteredLeads) {
+    let closedCount = 0;
+    for (const l of searchFiltered) {
       const r = rows[l.id];
       const st = r?.status ?? l.status;
       counts[st] = (counts[st] ?? 0) + 1;
       if (st === 'closed') {
+        closedCount += 1;
         const dv = Number(r?.deal_value ?? '');
         if (Number.isFinite(dv)) closedRevenue += dv;
       }
     }
-    return { counts, closedRevenue };
-  }, [filteredLeads, rows]);
+    return { counts, closedRevenue, closedCount, total: searchFiltered.length };
+  }, [searchFiltered, rows]);
 
   function setRow(id: string, patch: Partial<RowState>) {
     setRows((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
   }
 
-  async function saveLead(id: string, override?: Partial<Pick<RowState, 'status' | 'deal_value'>>) {
+  async function saveLead(
+    id: string,
+    override?: Partial<Pick<RowState, 'status' | 'deal_value'>>,
+    reasonId?: string,
+  ) {
     const r = { ...rows[id], ...override };
     setRow(id, { saving: true, saved: false, ...override });
     setErrMsg('');
@@ -197,6 +265,7 @@ export default function PortalLeadsManager({
         body: JSON.stringify({
           status: r.status,
           deal_value: r.deal_value.trim() === '' ? null : Number(r.deal_value),
+          ...(reasonId ? { reason_id: reasonId } : {}),
         }),
       });
       if (!res.ok) {
@@ -213,10 +282,12 @@ export default function PortalLeadsManager({
     }
   }
 
-  // שינוי סטטוס — "רכישה" (closed) פותח פופאפ סכום; אחרת נשמר מיד
+  // שינוי סטטוס — "רכישה" פותח פופאפ סכום, "לא רלוונטי" פותח פופאפ סיבה; אחרת נשמר מיד
   function onStatusChange(l: EnrichedLead, newStatus: string) {
     if (newStatus === 'closed') {
       setAmountModal({ lead: l, value: rows[l.id]?.deal_value || '' });
+    } else if (newStatus === 'irrelevant') {
+      openReasonModal(l);
     } else {
       saveLead(l.id, { status: newStatus });
     }
@@ -237,80 +308,103 @@ export default function PortalLeadsManager({
     <>
       {errMsg && <div className="banner-error">{errMsg}</div>}
 
-      {initialLeads.length > 0 && (
+      {needsGate && !selectedCategory ? (
+        <div className="category-gate">
+          <h1>איזו קטגוריה?</h1>
+          <p className="muted">בחר קטגוריה כדי לראות את הלידים שלה.</p>
+          <div className="category-grid">
+            {gateCategories.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                className="category-btn"
+                onClick={() => setSelectedCategory(c.id)}
+              >
+                <span className="category-name">{c.name}</span>
+                <span className="category-count">{c.count} לידים</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : (
+      <>
+      <div className="leads-head">
+        {needsGate && (
+          <button
+            type="button"
+            className="cat-back"
+            onClick={() => { setSelectedCategory(null); setStatusFilter(''); setSearch(''); }}
+          >
+            ← החלף קטגוריה
+          </button>
+        )}
+        <h1>{needsGate ? selectedCategoryName : 'הלידים שלך'}</h1>
+      </div>
+
+      {categoryLeads.length > 0 && (
         <>
-          {/* שורת סיכום */}
-          <div className="leads-summary">
-            <div className="leads-summary-chips">
-              <span className="ls-total">{filteredLeads.length} לידים</span>
-              {[...LEAD_STATUSES, ...customStatuses.map((s) => s.id)]
-                .filter((k) => summary.counts[k])
-                .map((k) => (
-                  <span
-                    key={k}
-                    className={customById.get(k) ? 'status-chip' : `status-chip status-${k}`}
-                    style={pillStyle(k)}
-                  >
-                    {statusLabel(k)}
-                    <b>{summary.counts[k]}</b>
-                  </span>
-                ))}
-              {canEdit && (
-                <button type="button" className="add-status-btn" onClick={() => setStatusModal(true)}>
-                  ＋ סטטוס
-                </button>
-              )}
+          {/* אנליטיקות */}
+          <div className="leads-stats">
+            <div className="stat">
+              <span className="stat-num">{nfIls.format(summary.total)}</span>
+              <span className="stat-lbl">לידים</span>
             </div>
-            {summary.closedRevenue > 0 && (
-              <div className="ls-revenue">
-                סה"כ נסגר <b>₪{nfIls.format(summary.closedRevenue)}</b>
-              </div>
-            )}
+            <div className="stat">
+              <span className="stat-num">{nfIls.format(summary.closedCount)}</span>
+              <span className="stat-lbl">נסגרו</span>
+            </div>
+            <div className="stat stat-feature">
+              <span className="stat-num">₪{nfIls.format(summary.closedRevenue)}</span>
+              <span className="stat-lbl">מכירות שנסגרו</span>
+            </div>
           </div>
 
-          {/* פילטרים */}
-          <div className="card leads-filters">
-            <div className="toolbar">
-              <div className="field">
-                <label>קמפיין</label>
-                <select className="select" value={filterCampaign} onChange={(e) => { setFilterCampaign(e.target.value); setFilterAdset(''); setFilterAd(''); }}>
-                  <option value="">כל הקמפיינים</option>
-                  {campaigns.map(([id, label]) => (<option key={id} value={id}>{label}</option>))}
-                </select>
-              </div>
-              <div className="field">
-                <label>סדרת מודעות</label>
-                <select className="select" value={filterAdset} onChange={(e) => { setFilterAdset(e.target.value); setFilterAd(''); }}>
-                  <option value="">כל סדרות המודעות</option>
-                  {adsets.map(([id, label]) => (<option key={id} value={id}>{label}</option>))}
-                </select>
-              </div>
-              <div className="field">
-                <label>מודעה</label>
-                <select className="select" value={filterAd} onChange={(e) => setFilterAd(e.target.value)}>
-                  <option value="">כל המודעות</option>
-                  {ads.map(([id, label]) => (<option key={id} value={id}>{label}</option>))}
-                </select>
-              </div>
-              <div className="field" style={{ flex: '1 1 200px' }}>
-                <label>חיפוש</label>
-                <input
-                  className="input"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="שם או טלפון…"
-                />
-              </div>
-            </div>
+          {/* חיפוש */}
+          <div className="leads-search">
+            <input
+              className="input"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="חיפוש שם או טלפון…"
+            />
+          </div>
+
+          {/* פילטר סטטוסים — ממש מעל הלידים */}
+          <div className="status-filterbar">
+            <button
+              type="button"
+              className={`status-filter-chip all ${statusFilter === '' ? 'active' : ''}`.trim()}
+              onClick={() => setStatusFilter('')}
+            >
+              הכל <b>{summary.total}</b>
+            </button>
+            {[...LEAD_STATUSES, ...customStatuses.map((s) => s.id)]
+              .filter((k) => summary.counts[k])
+              .map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  className={`status-chip status-filter-chip ${!customById.get(k) ? `status-${k}` : ''} ${statusFilter === k ? 'active' : ''}`.trim()}
+                  style={pillStyle(k)}
+                  onClick={() => setStatusFilter(statusFilter === k ? '' : k)}
+                >
+                  {statusLabel(k)} <b>{summary.counts[k]}</b>
+                </button>
+              ))}
+            {canEdit && (
+              <button type="button" className="add-status-btn" onClick={() => setStatusModal(true)}>
+                ＋ סטטוס
+              </button>
+            )}
           </div>
         </>
       )}
 
-      {initialLeads.length === 0 && <div className="card muted">אין לידים להצגה כרגע.</div>}
+      {categoryLeads.length === 0 && <div className="card muted">אין לידים בקטגוריה זו כרגע.</div>}
 
-      {initialLeads.length > 0 && filteredLeads.length === 0 ? (
+      {categoryLeads.length > 0 && filteredLeads.length === 0 ? (
         <div className="card muted">אין לידים התואמים את הסינון.</div>
-      ) : initialLeads.length > 0 ? (
+      ) : categoryLeads.length > 0 ? (
         <div className="lead-list">
           {filteredLeads.map((l) => {
             const r = rows[l.id];
@@ -331,14 +425,35 @@ export default function PortalLeadsManager({
                   <span className="lead-row-name">{l.name ?? '—'}</span>
                   <span className="lead-row-meta">
                     {l.phone && <span dir="ltr">{formatPhone(l.phone)}</span>}
-                    {d && <span>· {d.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' })}</span>}
+                    {d && (
+                      <span>
+                        · {d.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' })}{' '}
+                        {d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    )}
                     {getCount(l) > 0 && <span>· {getCount(l)} הערות</span>}
                   </span>
                 </span>
                 {isClosed && r.deal_value && (
                   <span className="lead-row-deal">₪{nfIls.format(Number(r.deal_value))}</span>
                 )}
-                <span className="status-chip lead-row-tag">{statusLabel(r.status)}</span>
+                <span
+                  className="status-chip lead-row-status"
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                >
+                  {statusLabel(r.status)}
+                  {canEdit && (
+                    <select
+                      className="status-overlay"
+                      value={r.status}
+                      onChange={(e) => onStatusChange(l, e.target.value)}
+                      aria-label="שינוי סטטוס"
+                    >
+                      {statusOptions.map((s) => (<option key={s.key} value={s.key}>{s.label}</option>))}
+                    </select>
+                  )}
+                </span>
                 {l.phone && (
                   <div className="row-actions">
                     <a
@@ -369,6 +484,8 @@ export default function PortalLeadsManager({
           })}
         </div>
       ) : null}
+      </>
+      )}
 
       {amountModal && (
         <div className="lightbox" onClick={() => setAmountModal(null)}>
@@ -390,6 +507,69 @@ export default function PortalLeadsManager({
               <button className="btn primary" onClick={confirmAmount}>שמירה</button>
               <button className="btn" onClick={() => setAmountModal(null)}>ביטול</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {reasonModal && (
+        <div className="lightbox" onClick={() => setReasonModal(null)}>
+          <div className="amount-modal reason-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>למה לא רלוונטי?</h3>
+            <p className="muted" style={{ margin: 0 }}>{reasonModal.lead.name ?? 'ליד'}</p>
+
+            {reasonModal.loading ? (
+              <div className="muted" style={{ padding: '0.5rem 0' }}>טוען…</div>
+            ) : (
+              <>
+                <div className="reason-list">
+                  {reasonModal.admin.map((r) => (
+                    <button key={r.id} type="button" className="reason-btn" onClick={() => pickReason(r.id)}>
+                      {r.label}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    className={`reason-btn reason-other ${reasonModal.showOther ? 'open' : ''}`.trim()}
+                    onClick={() => setReasonModal({ ...reasonModal, showOther: !reasonModal.showOther })}
+                  >
+                    אחר…
+                  </button>
+                </div>
+
+                {reasonModal.showOther && (
+                  <div className="reason-other-panel">
+                    {reasonModal.client.length > 0 && (
+                      <div className="reason-list">
+                        {reasonModal.client.map((r) => (
+                          <button key={r.id} type="button" className="reason-btn" onClick={() => pickReason(r.id)}>
+                            {r.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <div className="reason-add">
+                      <input
+                        className="input"
+                        autoFocus
+                        placeholder="סיבה חדשה…"
+                        value={reasonModal.newLabel}
+                        onChange={(e) => setReasonModal({ ...reasonModal, newLabel: e.target.value })}
+                        onKeyDown={(e) => { if (e.key === 'Enter') addOtherReason(); }}
+                      />
+                      <button
+                        className="btn primary"
+                        onClick={addOtherReason}
+                        disabled={!reasonModal.newLabel.trim() || reasonModal.saving}
+                      >
+                        הוסף
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            <button className="btn" onClick={() => setReasonModal(null)}>ביטול</button>
           </div>
         </div>
       )}

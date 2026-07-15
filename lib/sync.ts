@@ -9,7 +9,7 @@
  */
 
 import { getSupabaseClient } from './supabase';
-import { metaGet, metaGetAll, MetaApiError } from './meta';
+import { metaGet, metaGetAll, MetaApiError, GRAPH_VERSION } from './meta';
 
 type Json = any;
 
@@ -51,7 +51,7 @@ function actionSum(arr: Json): number {
 }
 
 /** ממפה את field_data של ליד leadgen לשדות שלנו (שמות שדה משתנים בין טפסים). */
-function leadFields(fieldData: Json): { name: string | null; phone: string | null; email: string | null } {
+export function leadFields(fieldData: Json): { name: string | null; phone: string | null; email: string | null } {
   const map: Record<string, string> = {};
   for (const f of fieldData ?? []) {
     const v = Array.isArray(f.values) ? f.values[0] : f.values;
@@ -156,7 +156,7 @@ export async function syncClient(clientId: string, range?: DateRange): Promise<S
   // כולל שדות ויזואליים: thumbnail (תצוגה מקדימה) + נכס מלא (image_url / source של וידאו).
   const metaAds = await metaGetAll(`${actPath}/ads`, {
     fields:
-      'id,name,status,adset_id,adset{name},campaign_id,creative{id,name,thumbnail_url,image_url,image_hash,video_id,object_story_spec,asset_feed_spec{images}}',
+      'id,name,status,adset_id,adset{name},campaign_id,creative{id,name,thumbnail_url,image_url,image_hash,video_id,object_story_spec,asset_feed_spec{images},effective_object_story_id}',
   });
 
   // חילוץ image_hash מקריאטיב — מכסה מודעות תמונה רגילות, שיתוף פוסט,
@@ -422,6 +422,7 @@ export async function syncClient(clientId: string, range?: DateRange): Promise<S
         meta_lead_id: string;
         ad_uuid: string;
         campaign_uuid: string;
+        form_id: string | null;
         created_time?: string;
         name: string | null;
         phone: string | null;
@@ -434,7 +435,7 @@ export async function syncClient(clientId: string, range?: DateRange): Promise<S
         const campUuid = campByMeta.get(ma.campaign_id)?.id;
         if (!adUuid || !campUuid) continue;
         const metaLeads = await metaGetAll(`${ma.id}/leads`, {
-          fields: 'id,created_time,field_data',
+          fields: 'id,created_time,field_data,form_id',
         });
         for (const ml of metaLeads) {
           const f = leadFields(ml.field_data);
@@ -442,6 +443,7 @@ export async function syncClient(clientId: string, range?: DateRange): Promise<S
             meta_lead_id: String(ml.id),
             ad_uuid: adUuid,
             campaign_uuid: campUuid,
+            form_id: ml.form_id ? String(ml.form_id) : null,
             created_time: ml.created_time,
             ...f,
           });
@@ -468,6 +470,7 @@ export async function syncClient(clientId: string, range?: DateRange): Promise<S
             campaign_id: l.campaign_uuid,
             ad_id: l.ad_uuid,
             meta_lead_id: l.meta_lead_id,
+            form_id: l.form_id,
             name: l.name,
             phone: l.phone,
             email: l.email,
@@ -481,10 +484,50 @@ export async function syncClient(clientId: string, range?: DateRange): Promise<S
           if (error) throw new Error(`Insert leads failed: ${error.message}`);
           leadsWritten = leadInserts.length;
         }
+
+        // backfill form_id ללידים קיימים שסונכרנו לפני שהשדה נוסף (בלי לדרוס דאטה אחר)
+        for (const l of incoming) {
+          if (!l.form_id || !existingMetaIds.has(l.meta_lead_id)) continue;
+          await supabase
+            .from('leads')
+            .update({ form_id: l.form_id })
+            .eq('client_id', clientId)
+            .eq('meta_lead_id', l.meta_lead_id)
+            .is('form_id', null);
+        }
       }
     } catch (err) {
       leadWarning =
         err instanceof MetaApiError ? err.toReadable() : err instanceof Error ? err.message : String(err);
+    }
+
+    // ---------- d2. מטמון טפסי הלידים של הלקוח (למסך שיוך קטגוריות) ----------
+    // page_id נגזר מ-effective_object_story_id של המודעות; page token נמשך עם ה-system token.
+    try {
+      const pageIds = new Set<string>();
+      for (const ma of leadAds) {
+        const osid: string = ma.creative?.effective_object_story_id ?? '';
+        if (osid.includes('_')) pageIds.add(osid.split('_')[0]);
+      }
+      const formRows: Json[] = [];
+      for (const pageId of pageIds) {
+        const pageToken = (await metaGet(pageId, { fields: 'access_token' }))?.access_token;
+        if (!pageToken) continue;
+        const url = new URL(`https://graph.facebook.com/${GRAPH_VERSION}/${pageId}/leadgen_forms`);
+        url.searchParams.set('fields', 'id,name');
+        url.searchParams.set('limit', '200');
+        url.searchParams.set('access_token', pageToken);
+        const res = await fetch(url.toString());
+        const json = await res.json().catch(() => ({}));
+        for (const f of (json.data as Json[]) ?? []) {
+          formRows.push({ id: String(f.id), client_id: clientId, name: f.name ?? null, synced_at: now() });
+        }
+      }
+      if (formRows.length > 0) {
+        await supabase.from('lead_forms').upsert(formRows, { onConflict: 'id' });
+      }
+    } catch {
+      // מטמון טפסים הוא best-effort — כשל לא מפיל את הסנכרון
     }
   }
 

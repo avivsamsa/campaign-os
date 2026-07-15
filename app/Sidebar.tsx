@@ -10,12 +10,11 @@ const ITEMS = [
   { href: '/clients', label: 'לקוחות' },
   { href: '/performance', label: 'Performance' },
   { href: '/creatives', label: 'קריאטיבים' },
-  { href: '/products', label: 'מוצרים' },
   { href: '/leads', label: 'לידים' },
 ];
 
 // נתיבי המערכת (אדמין). כל נתיב אחר = פורטל לקוח (/<slug>/…) — בלי sidebar.
-const ADMIN_PREFIXES = ['/clients', '/creatives', '/leads', '/performance', '/products'];
+const ADMIN_PREFIXES = ['/clients', '/creatives', '/leads', '/performance'];
 
 export default function Sidebar() {
   const pathname = usePathname();

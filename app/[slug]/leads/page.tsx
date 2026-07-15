@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { fetchClientLeads } from '@/lib/leads';
 import { getClientBySlug, resolvePortalSession } from '@/lib/portal-session';
+import { getSupabaseClient } from '@/lib/supabase';
 import PortalLeadsManager from './PortalLeadsManager';
 
 export const dynamic = 'force-dynamic';
@@ -15,10 +16,18 @@ export default async function PortalLeadsPage({ params }: { params: { slug: stri
 
   const leads = await fetchClientLeads(client.id);
 
+  // קטגוריות (מוצרים) שיש להן לידים — לשער הקטגוריות בפורטל
+  const catIds = [...new Set(leads.map((l) => l.category_id).filter(Boolean) as string[])];
+  let categories: { id: string; name: string }[] = [];
+  if (catIds.length > 0) {
+    const sb = getSupabaseClient();
+    const { data } = await sb.from('products').select('id, name').in('id', catIds);
+    categories = (data ?? []).map((p) => ({ id: p.id as string, name: p.name as string }));
+  }
+
   return (
     <>
-      <h1 style={{ marginBottom: '1rem' }}>הלידים שלך</h1>
-      <PortalLeadsManager initialLeads={leads} canEdit={client.show_leads} />
+      <PortalLeadsManager initialLeads={leads} canEdit={client.show_leads} categories={categories} />
     </>
   );
 }

@@ -61,6 +61,10 @@ export type EnrichedLead = {
   creative_label: string | null;
   creative_thumb: string | null;
   notes_count: number;
+  form_id: string | null;
+  category_id: string | null; // המוצר/קטגוריה שאליו מנותב הטופס
+  reason_id: string | null; // סיבת "לא רלוונטי" (אם נבחרה)
+  reason_label: string | null;
 };
 
 /**
@@ -78,11 +82,26 @@ export async function fetchClientLeads(clientId: string): Promise<EnrichedLead[]
 
   const { data: leads, error } = await sb
     .from('leads')
-    .select('id, meta_lead_id, name, phone, email, status, deal_value, created_at, closed_at, ad_id')
+    .select('id, meta_lead_id, name, phone, email, status, deal_value, created_at, closed_at, ad_id, form_id, reason_id')
     .eq('client_id', clientId)
     .order('created_at', { ascending: false });
   if (error) throw new Error(error.message);
   const rows = leads ?? [];
+
+  // תוויות סיבות "לא רלוונטי" עבור הלידים המסומנים
+  const reasonIds = [...new Set(rows.map((l) => l.reason_id).filter(Boolean) as string[])];
+  const reasonLabel = new Map<string, string>();
+  if (reasonIds.length > 0) {
+    const { data: reasons } = await sb.from('lead_reasons').select('id, label').in('id', reasonIds);
+    for (const r of reasons ?? []) reasonLabel.set(r.id as string, r.label as string);
+  }
+
+  // ניתוב טופס → קטגוריה (מוצר)
+  const { data: routes } = await sb
+    .from('lead_form_routes')
+    .select('form_id, product_id')
+    .eq('client_id', clientId);
+  const formToProduct = new Map((routes ?? []).map((r) => [r.form_id as string, r.product_id as string]));
 
   const adIds = [...new Set(rows.map((l) => l.ad_id).filter(Boolean) as string[])];
   const adInfo = new Map<
@@ -144,6 +163,7 @@ export async function fetchClientLeads(clientId: string): Promise<EnrichedLead[]
     const { data: notes, error: notesErr } = await sb
       .from('lead_notes')
       .select('lead_id')
+      .eq('kind', 'note')
       .in('lead_id', leadIds);
     if (!notesErr) {
       for (const n of notes ?? []) {
@@ -177,6 +197,10 @@ export async function fetchClientLeads(clientId: string): Promise<EnrichedLead[]
       creative_label: ad?.creative_id ? creativeLabel.get(ad.creative_id) ?? null : null,
       creative_thumb: ad?.creative_id ? creativeThumb.get(ad.creative_id) ?? null : null,
       notes_count: notesCount.get(l.id as string) ?? 0,
+      form_id: (l.form_id as string) ?? null,
+      category_id: l.form_id ? formToProduct.get(l.form_id as string) ?? null : null,
+      reason_id: (l.reason_id as string) ?? null,
+      reason_label: l.reason_id ? reasonLabel.get(l.reason_id as string) ?? null : null,
     };
   });
 }

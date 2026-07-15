@@ -14,7 +14,7 @@ export async function GET(_req: Request, { params }: { params: { leadId: string 
   const sb = getSupabaseClient();
   const { data, error } = await sb
     .from('lead_notes')
-    .select('id, body, created_at')
+    .select('id, body, kind, meta, created_at')
     .eq('lead_id', params.leadId)
     .order('created_at', { ascending: false });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -42,7 +42,7 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
   const { data, error } = await sb
     .from('lead_notes')
     .insert({ lead_id: params.leadId, body: text })
-    .select('id, body, created_at')
+    .select('id, body, kind, meta, created_at')
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ note: data }, { status: 201 });
