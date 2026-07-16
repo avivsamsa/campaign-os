@@ -1325,6 +1325,30 @@ body.portal-mode .app-main { margin-right: 0; }
 }
 .lead-row:hover { border-color: var(--border-strong); background: var(--surface-2); transform: translateY(-1px); }
 .lead-row:hover { border-inline-start-color: var(--c, var(--muted)); }
+/* ליד חדש שנכנס בזמן אמת — כניסה חלקה + הבהוב עדין בצבע המותג */
+.lead-row-new { animation: leadIn 0.65s var(--ease-out) both; }
+@keyframes leadIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.99);
+    background: color-mix(in srgb, var(--primary) 20%, var(--surface));
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 45%, transparent);
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    background: color-mix(in srgb, var(--primary) 12%, var(--surface));
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    background: var(--surface);
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lead-row-new { animation: none; }
+}
 .lead-row-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
 .lead-row-name { font-weight: 600; font-size: 0.98rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lead-row-meta { display: flex; gap: 0.35rem; flex-wrap: nowrap; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }

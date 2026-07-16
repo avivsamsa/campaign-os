@@ -8,7 +8,7 @@
  *  - RTL מסודר, header דביק, hover/flash על שמירה.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LEAD_STATUSES, formatPhone, type EnrichedLead } from '@/lib/leads';
 import {
@@ -63,26 +63,99 @@ export default function PortalLeadsManager({
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
+  // רשימת הלידים בסטייט — כדי שלידים חדשים ייכנסו בזמן אמת (polling) בלי רענון.
+  const [leads, setLeads] = useState<EnrichedLead[]>(initialLeads);
+  const leadsRef = useRef(initialLeads);
+  useEffect(() => { leadsRef.current = leads; }, [leads]);
+  // סנכרון עם רענון-שרת (router.refresh לאחר עריכה) — מקור אמת מלא
+  useEffect(() => { setLeads(initialLeads); }, [initialLeads]);
+  // ids של לידים שזה עתה נכנסו — להדגשה/אנימציה
+  const [newIds, setNewIds] = useState<Set<string>>(() => new Set());
+
+  // כל ליד ברשימה חייב רשומת rows (כולל לידים חדשים) — בלי לדרוס עריכות מקומיות
+  useEffect(() => {
+    setRows((r) => {
+      let changed = false;
+      const next = { ...r };
+      for (const l of leads) {
+        if (!next[l.id]) {
+          next[l.id] = {
+            status: l.status,
+            deal_value: l.deal_value != null ? String(l.deal_value) : '',
+            saving: false,
+            saved: false,
+          };
+          changed = true;
+        }
+      }
+      return changed ? next : r;
+    });
+  }, [leads]);
+
+  // Polling — לידים חדשים (webhook/סנכרון) נכנסים לבד כל 10 שניות, עם אנימציה
+  useEffect(() => {
+    let alive = true;
+    async function poll() {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+      try {
+        const res = await fetch('/api/portal/leads');
+        if (!alive || !res.ok) return;
+        const d = await res.json();
+        const fresh = d.leads as EnrichedLead[] | undefined;
+        if (!Array.isArray(fresh)) return;
+        const known = new Set(leadsRef.current.map((l) => l.id));
+        const added = fresh.filter((l) => !known.has(l.id));
+        if (added.length === 0) return;
+        setLeads((prev) => {
+          const ids = new Set(prev.map((l) => l.id));
+          const toAdd = added.filter((l) => !ids.has(l.id));
+          if (toAdd.length === 0) return prev;
+          return [...toAdd, ...prev].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+        });
+        setNewIds((s) => {
+          const n = new Set(s);
+          added.forEach((l) => n.add(l.id));
+          return n;
+        });
+        setTimeout(() => {
+          if (!alive) return;
+          setNewIds((s) => {
+            const n = new Set(s);
+            added.forEach((l) => n.delete(l.id));
+            return n;
+          });
+        }, 2000);
+      } catch {
+        /* שקט — הפולינג הבא ינסה שוב */
+      }
+    }
+    const iv = setInterval(poll, 10000);
+    return () => {
+      alive = false;
+      clearInterval(iv);
+    };
+  }, []);
+
   // קטגוריות עם ספירות (+ "אחר" ללידים ללא קטגוריה) — לשער הבחירה
   const gateCategories = useMemo(() => {
     const withCount = categories.map((c) => ({
       id: c.id,
       name: c.name,
-      count: initialLeads.filter((l) => l.category_id === c.id).length,
+      count: leads.filter((l) => l.category_id === c.id).length,
     }));
-    const uncategorized = initialLeads.filter((l) => !l.category_id).length;
+    const uncategorized = leads.filter((l) => !l.category_id).length;
     if (uncategorized > 0) withCount.push({ id: '__none__', name: 'אחר', count: uncategorized });
     return withCount.filter((c) => c.count > 0);
-  }, [categories, initialLeads]);
+  }, [categories, leads]);
 
   const needsGate = gateCategories.length > 1;
 
   // הלידים הרלוונטיים לפי הקטגוריה שנבחרה (או הכל אם אין שער)
   const categoryLeads = useMemo(() => {
-    if (!needsGate || !selectedCategory) return initialLeads;
-    if (selectedCategory === '__none__') return initialLeads.filter((l) => !l.category_id);
-    return initialLeads.filter((l) => l.category_id === selectedCategory);
-  }, [initialLeads, needsGate, selectedCategory]);
+    if (!needsGate || !selectedCategory) return leads;
+    if (selectedCategory === '__none__') return leads.filter((l) => !l.category_id);
+    return leads.filter((l) => l.category_id === selectedCategory);
+  }, [leads, needsGate, selectedCategory]);
 
   const selectedCategoryName =
     selectedCategory === '__none__'
@@ -408,6 +481,7 @@ export default function PortalLeadsManager({
         <div className="lead-list">
           {filteredLeads.map((l) => {
             const r = rows[l.id];
+            if (!r) return null;
             const d = l.created_at ? new Date(l.created_at) : null;
             const isClosed = r.status === 'closed';
             const builtin = !customById.get(r.status);
@@ -416,7 +490,7 @@ export default function PortalLeadsManager({
                 key={l.id}
                 role="button"
                 tabIndex={0}
-                className={`lead-row ${builtin ? `status-${r.status}` : ''} ${isClosed ? 'won' : ''}`.trim()}
+                className={`lead-row ${builtin ? `status-${r.status}` : ''} ${isClosed ? 'won' : ''} ${newIds.has(l.id) ? 'lead-row-new' : ''}`.trim()}
                 style={builtin ? undefined : pillStyle(r.status)}
                 onClick={() => setSelected(l)}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelected(l); } }}
