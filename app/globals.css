@@ -120,7 +120,14 @@
   transition: color var(--duration) var(--ease), background var(--duration) var(--ease), border-color var(--duration) var(--ease);
 }
 .theme-toggle:hover { color: var(--text); background: var(--surface-2); border-color: var(--border-strong); }
-.sidebar-foot { margin-top: auto; padding-top: 1rem; }
+.sidebar-foot { margin-top: auto; padding-top: 1rem; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.sidebar-logout {
+  font: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+  background: none; border: 1px solid var(--border-strong); color: var(--muted);
+  padding: 0.35rem 0.8rem; border-radius: var(--radius-full);
+  transition: color var(--duration) var(--ease), border-color var(--duration) var(--ease);
+}
+.sidebar-logout:hover { color: var(--danger); border-color: var(--danger); }
 
 /* ==========================================================================
    Reset & base

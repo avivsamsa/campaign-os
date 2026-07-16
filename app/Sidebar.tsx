@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import ThemeToggle from './ThemeToggle';
 
@@ -18,8 +18,15 @@ const ADMIN_PREFIXES = ['/adminadmin', '/clients', '/creatives', '/leads', '/per
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const isAdmin = ADMIN_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   const inPortal = !isAdmin;
+
+  async function logout() {
+    await fetch('/api/admin/logout', { method: 'POST' }).catch(() => {});
+    router.replace('/admin-login');
+    router.refresh();
+  }
 
   // מסיר את ההזחה של app-main כשמסתירים את הסיידבר (פורטל)
   useEffect(() => {
@@ -44,6 +51,7 @@ export default function Sidebar() {
       </nav>
       <div className="sidebar-foot">
         <ThemeToggle />
+        <button type="button" className="sidebar-logout" onClick={logout}>התנתקות</button>
       </div>
     </aside>
   );
