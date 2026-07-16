@@ -95,7 +95,7 @@ export default function PerformancePage() {
   return (
     <main className="container">
       <div className="breadcrumb">
-        <Link href="/">בית</Link> / Performance
+        <Link href="/adminadmin">בית</Link> / Performance
       </div>
       <h1>Performance</h1>
 

@@ -6,20 +6,19 @@ import { useEffect } from 'react';
 import ThemeToggle from './ThemeToggle';
 
 const ITEMS = [
-  { href: '/', label: 'Dashboard' },
+  { href: '/adminadmin', label: 'Dashboard' },
   { href: '/clients', label: 'לקוחות' },
   { href: '/performance', label: 'Performance' },
   { href: '/creatives', label: 'קריאטיבים' },
   { href: '/leads', label: 'לידים' },
 ];
 
-// נתיבי המערכת (אדמין). כל נתיב אחר = פורטל לקוח (/<slug>/…) — בלי sidebar.
-const ADMIN_PREFIXES = ['/clients', '/creatives', '/leads', '/performance'];
+// נתיבי המערכת (אדמין). '/' = דף נחיתה ציבורי, כל נתיב אחר שאינו כאן = פורטל לקוח — בלי sidebar.
+const ADMIN_PREFIXES = ['/adminadmin', '/clients', '/creatives', '/leads', '/performance'];
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const isAdmin =
-    pathname === '/' || ADMIN_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  const isAdmin = ADMIN_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   const inPortal = !isAdmin;
 
   // מסיר את ההזחה של app-main כשמסתירים את הסיידבר (פורטל)
@@ -31,7 +30,7 @@ export default function Sidebar() {
   if (inPortal) return null;
 
   const isActive = (href: string) =>
-    href === '/' ? pathname === '/' : pathname.startsWith(href);
+    href === '/adminadmin' ? pathname === '/adminadmin' : pathname.startsWith(href);
 
   return (
     <aside className="sidebar">

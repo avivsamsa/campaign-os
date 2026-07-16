@@ -17,7 +17,7 @@ export default async function ClientsPage() {
   return (
     <main className="container">
       <div className="breadcrumb">
-        <Link href="/">בית</Link> / לקוחות
+        <Link href="/adminadmin">בית</Link> / לקוחות
       </div>
       <div className="row-between">
         <h1>לקוחות</h1>
