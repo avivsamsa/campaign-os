@@ -2465,3 +2465,54 @@ body.portal-mode .app-main { margin-right: 0; }
 @media print {
   .report-section { break-inside: avoid; page-break-inside: avoid; }
 }
+
+/* ==========================================================================
+   מרכז שליטה (דשבורד)
+   ========================================================================== */
+
+.period-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+}
+.period-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  padding: 0.45rem 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background var(--duration) var(--ease), color var(--duration) var(--ease);
+}
+.period-btn:not(:last-child) { border-inline-end: 1px solid var(--border); }
+.period-btn:hover { background: var(--surface-2); color: var(--text); }
+.period-btn.active { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
+
+.alert-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.7rem;
+}
+.alert-card {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--border);
+  border-inline-start: 3px solid var(--muted-2);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  transition: border-color var(--duration) var(--ease), background var(--duration) var(--ease);
+}
+.alert-card:hover { background: var(--surface-2); text-decoration: none; }
+.alert-card.alert-loss { border-inline-start-color: var(--danger); }
+.alert-card.alert-low_roas { border-inline-start-color: var(--warn); }
+.alert-card.alert-no_leads { border-inline-start-color: var(--muted); }
+.alert-ico { font-size: 1.1rem; line-height: 1; }
+.alert-body { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.alert-msg { font-size: 0.82rem; color: var(--muted); }

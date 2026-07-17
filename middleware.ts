@@ -70,6 +70,7 @@ export const config = {
     '/leads/:path*',
     '/performance',
     '/performance/:path*',
+    '/api/dashboard',
     '/api/clients/:path*',
     '/api/leads/:path*',
     '/api/products/:path*',
