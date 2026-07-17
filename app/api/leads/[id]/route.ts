@@ -48,3 +48,15 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ lead: data });
 }
+
+// DELETE /api/leads/[id] — מחיקת ליד (אדמין). מוחק גם הערות משויכות אם קיימות.
+export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+  const sb = getSupabaseClient();
+
+  // מחיקת הערות משויכות תחילה (סבילה לטבלה חסרה)
+  await sb.from('lead_notes').delete().eq('lead_id', params.id);
+
+  const { error } = await sb.from('leads').delete().eq('id', params.id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}

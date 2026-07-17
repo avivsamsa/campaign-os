@@ -36,6 +36,8 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
   const [importMsg, setImportMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [notesFor, setNotesFor] = useState<EnrichedLead | null>(null);
   const [notesCounts, setNotesCounts] = useState<Record<string, number>>({});
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   function getCount(l: EnrichedLead): number {
     return notesCounts[l.id] ?? l.notes_count ?? 0;
@@ -76,11 +78,12 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
     () =>
       initialLeads.filter(
         (l) =>
+          !deletedIds.has(l.id) &&
           (!filterCampaign || l.campaign_id === filterCampaign) &&
           (!filterAdset || l.meta_adset_id === filterAdset) &&
           (!filterAd || l.ad_id === filterAd),
       ),
-    [initialLeads, filterCampaign, filterAdset, filterAd],
+    [initialLeads, filterCampaign, filterAdset, filterAd, deletedIds],
   );
 
   function setRow(id: string, patch: Partial<RowState>) {
@@ -110,6 +113,28 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
     } catch (err) {
       setImportMsg({ ok: false, text: err instanceof Error ? err.message : String(err) });
       setRow(id, { saving: false });
+    }
+  }
+
+  async function deleteLead(l: EnrichedLead) {
+    const label = l.name || l.phone || l.email || 'ליד זה';
+    if (!window.confirm(`למחוק את ${label}? הפעולה בלתי הפיכה.`)) return;
+    setDeletingId(l.id);
+    try {
+      const res = await fetch(`/api/leads/${l.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setImportMsg({ ok: false, text: `מחיקת ליד נכשלה: ${d.error ?? res.statusText}` });
+        setDeletingId(null);
+        return;
+      }
+      setDeletedIds((prev) => new Set(prev).add(l.id));
+      setDeletingId(null);
+      setImportMsg({ ok: true, text: 'הליד נמחק ✓' });
+      router.refresh();
+    } catch (err) {
+      setImportMsg({ ok: false, text: err instanceof Error ? err.message : String(err) });
+      setDeletingId(null);
     }
   }
 
@@ -333,9 +358,19 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
                     </button>
                   </td>
                   <td className="m-save">
-                    <button className="btn btn-sm primary" onClick={() => saveLead(l.id)} disabled={r.saving}>
-                      {r.saving ? '...' : r.saved ? '✓' : 'שמור'}
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.35rem', justifyContent: 'flex-end' }}>
+                      <button className="btn btn-sm primary" onClick={() => saveLead(l.id)} disabled={r.saving}>
+                        {r.saving ? '...' : r.saved ? '✓' : 'שמור'}
+                      </button>
+                      <button
+                        className="btn btn-sm danger"
+                        onClick={() => deleteLead(l)}
+                        disabled={deletingId === l.id}
+                        title="מחק ליד"
+                      >
+                        {deletingId === l.id ? '...' : '🗑'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
