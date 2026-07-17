@@ -19,7 +19,7 @@
 import { getSupabaseClient } from './supabase';
 import { runFormulas, type Direction, type Formula } from './profit';
 
-export type GroupBy = 'day' | 'week' | 'creative' | 'campaign';
+export type GroupBy = 'day' | 'week' | 'creative' | 'campaign' | 'category';
 
 export type Scope = {
   client_id: string;
@@ -266,6 +266,32 @@ export async function queryMetrics(
     }
   }
 
+  // 3ב. מיפוי קריאטיב → קטגוריה (מוצר), לפילוח לפי קטגוריה
+  const creativeToProduct = new Map<string, { id: string; label: string }>();
+  if (groupBy === 'category') {
+    const creativeIds = [...new Set(ads.map((a) => a.creative_id).filter(Boolean) as string[])];
+    if (creativeIds.length > 0) {
+      const { data: creatives } = await sb
+        .from('creatives')
+        .select('id, product_id')
+        .in('id', creativeIds);
+      const productIds = [
+        ...new Set((creatives ?? []).map((c) => c.product_id).filter(Boolean) as string[]),
+      ];
+      const productName = new Map<string, string>();
+      if (productIds.length > 0) {
+        const { data: products } = await sb.from('products').select('id, name').in('id', productIds);
+        for (const p of products ?? []) productName.set(p.id as string, (p.name as string) || (p.id as string));
+      }
+      for (const c of creatives ?? []) {
+        const pid = c.product_id as string | null;
+        if (pid) {
+          creativeToProduct.set(c.id as string, { id: pid, label: productName.get(pid) || pid });
+        }
+      }
+    }
+  }
+
   // ---- אגירת buckets ----
   const buckets = new Map<string, { label: string; sums: Sums }>();
 
@@ -277,6 +303,10 @@ export async function queryMetrics(
     }
     if (groupBy === 'campaign') {
       return { key: adRow.campaign_id, label: campaignName.get(adRow.campaign_id) || adRow.campaign_id };
+    }
+    if (groupBy === 'category') {
+      const p = adRow.creative_id ? creativeToProduct.get(adRow.creative_id) : null;
+      return p ? { key: p.id, label: p.label } : { key: '(none)', label: 'ללא קטגוריה' };
     }
     return {
       key: adRow.creative_id ?? '(none)',

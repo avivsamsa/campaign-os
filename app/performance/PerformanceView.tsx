@@ -17,6 +17,7 @@ const GROUP_BYS: { value: GroupBy; label: string }[] = [
   { value: 'week', label: 'שבוע' },
   { value: 'creative', label: 'קריאטיב' },
   { value: 'campaign', label: 'קמפיין' },
+  { value: 'category', label: 'קטגוריה' },
 ];
 
 function isoDaysAgo(days: number): string {

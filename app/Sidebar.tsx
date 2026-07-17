@@ -22,6 +22,7 @@ const CLIENT_ITEMS = [
   { seg: '/performance', label: 'ביצועים' },
   { seg: '/leads', label: 'לידים' },
   { seg: '/creatives', label: 'קריאטיבים' },
+  { seg: '/report', label: 'דוח' },
   { seg: '/settings', label: 'הגדרות' },
 ];
 

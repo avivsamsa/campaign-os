@@ -2319,6 +2319,11 @@ body.portal-mode .app-main { margin-right: 0; }
   letter-spacing: -0.015em;
   line-height: 1.15;
 }
+.kpi-card--accent {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+.kpi-card--accent .kpi-value { color: var(--primary); }
 
 /* ==========================================================================
    מסך טעינה בכניסה למערכת

@@ -27,6 +27,7 @@ const DIM_LABEL: Record<GroupBy, string> = {
   week: 'שבוע',
   creative: 'קריאטיב',
   campaign: 'קמפיין',
+  category: 'קטגוריה',
 };
 
 /** צבע heatmap יחסי לעמודה, לפי כיוון: higher / lower (ירוק↔אדום) או neutral (אמבר). */

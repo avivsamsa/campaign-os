@@ -3,7 +3,7 @@ import { queryMetrics, type GroupBy } from '@/lib/metrics';
 
 export const dynamic = 'force-dynamic';
 
-const GROUP_BYS: GroupBy[] = ['day', 'week', 'creative', 'campaign'];
+const GROUP_BYS: GroupBy[] = ['day', 'week', 'creative', 'campaign', 'category'];
 
 // GET /api/metrics?client_id&campaign_id?&creative_id?&group_by&since&until
 export async function GET(req: Request) {
