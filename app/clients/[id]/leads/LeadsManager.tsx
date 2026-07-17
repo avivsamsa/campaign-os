@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LEAD_STATUSES, type EnrichedLead } from '@/lib/leads';
 import LeadNotesPanel from './LeadNotesPanel';
@@ -47,6 +47,35 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
   const [filterCampaign, setFilterCampaign] = useState('');
   const [filterAdset, setFilterAdset] = useState('');
   const [filterAd, setFilterAd] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+
+  // שמות קטגוריות (מוצרים) של הלקוח — לפילוח לפי קטגוריה
+  const [catNames, setCatNames] = useState<Record<string, string>>({});
+  useEffect(() => {
+    fetch(`/api/clients/${clientId}/products`)
+      .then((r) => r.json())
+      .then((d) => {
+        const map: Record<string, string> = {};
+        for (const p of (d.products ?? []) as { id: string; name: string }[]) map[p.id] = p.name;
+        setCatNames(map);
+      })
+      .catch(() => {});
+  }, [clientId]);
+
+  // אפשרויות קטגוריה — רק כאלה שמופיעות בלידים (+ "ללא קטגוריה" אם יש)
+  const NONE_CAT = '__none__';
+  const categories = useMemo(() => {
+    const ids = new Set<string>();
+    let hasNone = false;
+    for (const l of initialLeads) {
+      if (l.category_id) ids.add(l.category_id);
+      else hasNone = true;
+    }
+    const opts = [...ids].map((id) => [id, catNames[id] || 'קטגוריה'] as [string, string]);
+    opts.sort((a, b) => a[1].localeCompare(b[1]));
+    if (hasNone) opts.push([NONE_CAT, 'ללא קטגוריה']);
+    return opts;
+  }, [initialLeads, catNames]);
 
   // אופציות נגזרות מתוך הלידים — מסתננות לפי הבחירה בשלב הקודם
   const campaigns = useMemo(() => {
@@ -81,9 +110,11 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
           !deletedIds.has(l.id) &&
           (!filterCampaign || l.campaign_id === filterCampaign) &&
           (!filterAdset || l.meta_adset_id === filterAdset) &&
-          (!filterAd || l.ad_id === filterAd),
+          (!filterAd || l.ad_id === filterAd) &&
+          (!filterCategory ||
+            (filterCategory === NONE_CAT ? !l.category_id : l.category_id === filterCategory)),
       ),
-    [initialLeads, filterCampaign, filterAdset, filterAd, deletedIds],
+    [initialLeads, filterCampaign, filterAdset, filterAd, filterCategory, deletedIds],
   );
 
   function setRow(id: string, patch: Partial<RowState>) {
@@ -198,6 +229,23 @@ export default function LeadsManager({ clientId, initialLeads }: Props) {
       {initialLeads.length > 0 && (
         <div className="card">
           <div className="toolbar">
+            {categories.length > 0 && (
+              <div className="field">
+                <label>קטגוריה</label>
+                <select
+                  className="select"
+                  value={filterCategory}
+                  onChange={(e) => setFilterCategory(e.target.value)}
+                >
+                  <option value="">כל הקטגוריות</option>
+                  {categories.map(([id, label]) => (
+                    <option key={id} value={id}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="field">
               <label>קמפיין</label>
               <select
