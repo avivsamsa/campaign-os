@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import ThemeToggle from './ThemeToggle';
 
 const ITEMS = [
@@ -19,6 +19,7 @@ const ADMIN_PREFIXES = ['/adminadmin', '/clients', '/creatives', '/leads', '/per
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const [open, setOpen] = useState(false);
   const isAdmin = ADMIN_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   const inPortal = !isAdmin;
 
@@ -34,25 +35,56 @@ export default function Sidebar() {
     else document.body.classList.remove('portal-mode');
   }, [inPortal]);
 
+  // סגירת המגירה במובייל בעת ניווט
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
   if (inPortal) return null;
 
   const isActive = (href: string) =>
     href === '/adminadmin' ? pathname === '/adminadmin' : pathname.startsWith(href);
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-brand">Campaign OS</div>
-      <nav className="sidebar-nav">
-        {ITEMS.map((it) => (
-          <Link key={it.href} href={it.href} className={isActive(it.href) ? 'active' : ''}>
-            {it.label}
-          </Link>
-        ))}
-      </nav>
-      <div className="sidebar-foot">
-        <ThemeToggle />
-        <button type="button" className="sidebar-logout" onClick={logout}>התנתקות</button>
-      </div>
-    </aside>
+    <>
+      {/* סרגל עליון — מובייל בלבד (CSS) */}
+      <header className="admin-topbar">
+        <button
+          type="button"
+          className="admin-burger"
+          onClick={() => setOpen(true)}
+          aria-label="פתח תפריט"
+        >
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+        </button>
+        <span className="admin-topbar-brand">Campaign OS</span>
+      </header>
+
+      <div
+        className={`sidebar-scrim ${open ? 'show' : ''}`.trim()}
+        onClick={() => setOpen(false)}
+        aria-hidden="true"
+      />
+
+      <aside className={`sidebar ${open ? 'open' : ''}`.trim()}>
+        <div className="sidebar-brand">Campaign OS</div>
+        <nav className="sidebar-nav">
+          {ITEMS.map((it) => (
+            <Link
+              key={it.href}
+              href={it.href}
+              className={isActive(it.href) ? 'active' : ''}
+              onClick={() => setOpen(false)}
+            >
+              {it.label}
+            </Link>
+          ))}
+        </nav>
+        <div className="sidebar-foot">
+          <ThemeToggle />
+          <button type="button" className="sidebar-logout" onClick={logout}>התנתקות</button>
+        </div>
+      </aside>
+    </>
   );
 }

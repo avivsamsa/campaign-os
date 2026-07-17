@@ -106,6 +106,7 @@ export default function MetricsTable({
     });
 
   return (
+    <div className="mtable">
     <table className="table">
       <thead>
         <tr>
@@ -137,5 +138,6 @@ export default function MetricsTable({
         ))}
       </tbody>
     </table>
+    </div>
   );
 }

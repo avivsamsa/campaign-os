@@ -33,6 +33,7 @@ export default async function ClientsPage() {
       )}
 
       {clients.length > 0 && (
+        <div className="mtable">
         <table className="table">
           <thead>
             <tr>
@@ -63,6 +64,7 @@ export default async function ClientsPage() {
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </main>
   );
