@@ -2432,3 +2432,36 @@ body.portal-mode .app-main { margin-right: 0; }
   table, tr, td, th { break-inside: avoid; }
   a[href]::after { content: ''; } /* לא להדפיס URLs אחרי לינקים */
 }
+
+/* ----- בונה הדוח: בחירת מקטעים ----- */
+.report-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.1rem;
+  padding: 0.9rem 0 0.2rem;
+  border-top: 1px solid var(--border);
+  margin-top: 0.8rem;
+}
+.report-picker-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.9rem;
+}
+.report-picker-title { color: var(--muted); font-size: 0.85rem; font-weight: 600; }
+.report-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  user-select: none;
+}
+.report-check input { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+.report-section { margin-top: 1.5rem; }
+.report-section:first-of-type { margin-top: 0.5rem; }
+
+@media print {
+  .report-section { break-inside: avoid; page-break-inside: avoid; }
+}
