@@ -2516,3 +2516,42 @@ body.portal-mode .app-main { margin-right: 0; }
 .alert-ico { font-size: 1.1rem; line-height: 1; }
 .alert-body { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
 .alert-msg { font-size: 0.82rem; color: var(--muted); }
+
+/* ----- גרף מגמה בדשבורד ----- */
+.trend-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.6rem;
+  flex-wrap: wrap;
+}
+.trend-title { font-weight: 600; font-size: 0.95rem; display: flex; align-items: baseline; gap: 0.6rem; }
+.trend-total { color: var(--muted); font-size: 0.82rem; font-weight: 500; }
+.trend-plot { position: relative; }
+.trend-svg { width: 100%; height: auto; display: block; overflow: visible; }
+.trend-grid { stroke: var(--border); stroke-width: 1; }
+.trend-ytick, .trend-xtick { fill: var(--muted-2); font-size: 11px; font-family: inherit; }
+.trend-area { fill: var(--primary-soft); }
+.trend-line { stroke: var(--primary); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.trend-crosshair { stroke: var(--border-strong); stroke-width: 1; stroke-dasharray: 3 3; }
+.trend-dot { fill: var(--primary); stroke: var(--surface); stroke-width: 2; }
+.trend-tip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 10px));
+  background: var(--text);
+  color: var(--bg);
+  padding: 0.3rem 0.55rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: var(--shadow-md);
+  z-index: 2;
+}
+.trend-tip-date { opacity: 0.7; font-size: 0.7rem; }
+.trend-tip-val { font-weight: 700; }
+
+/* ----- כותרות טבלה לחיצות למיון ----- */
+.th-sort { cursor: pointer; user-select: none; white-space: nowrap; }
+.th-sort:hover { color: var(--primary); }

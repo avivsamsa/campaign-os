@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import DashboardTrend from './DashboardTrend';
 
 type ClientRow = {
   id: string;
@@ -32,7 +33,10 @@ type Dashboard = {
   };
   clients: ClientRow[];
   alerts: Alert[];
+  series: { date: string; spend: number; leads: number }[];
 };
+
+type SortKey = 'name' | 'spend' | 'leads' | 'closed' | 'revenue' | 'profit' | 'roas';
 
 const nf0 = new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 });
 const nf2 = new Intl.NumberFormat('he-IL', { maximumFractionDigits: 2 });
@@ -94,11 +98,33 @@ export default function AdminDashboard() {
       ]
     : [];
 
-  // לקוחות ממויינים לפי הוצאה יורדת
-  const sortedClients = useMemo(
-    () => [...(data?.clients ?? [])].sort((a, b) => b.spend - a.spend),
-    [data],
-  );
+  // מיון לחיץ — ברירת מחדל הוצאה יורדת
+  const [sortKey, setSortKey] = useState<SortKey>('spend');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  function toggleSort(k: SortKey) {
+    if (k === sortKey) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else {
+      setSortKey(k);
+      setSortDir(k === 'name' ? 'asc' : 'desc');
+    }
+  }
+
+  const sortedClients = useMemo(() => {
+    const rows = [...(data?.clients ?? [])];
+    const dir = sortDir === 'asc' ? 1 : -1;
+    rows.sort((a, b) => {
+      if (sortKey === 'name') return a.name.localeCompare(b.name) * dir;
+      const va = a[sortKey];
+      const vb = b[sortKey];
+      const na = va == null ? -Infinity : (va as number);
+      const nb = vb == null ? -Infinity : (vb as number);
+      return (na - nb) * dir;
+    });
+    return rows;
+  }, [data, sortKey, sortDir]);
+
+  const arrow = (k: SortKey) => (sortKey === k ? (sortDir === 'asc' ? ' ▲' : ' ▼') : '');
 
   return (
     <main className="container">
@@ -143,6 +169,13 @@ export default function AdminDashboard() {
             ))}
           </div>
 
+          {/* גרף מגמה */}
+          {data && data.series.length > 1 && (
+            <div className="card" style={{ marginTop: '1rem' }}>
+              <DashboardTrend series={data.series} currency={null} />
+            </div>
+          )}
+
           {/* התראות */}
           {data && data.alerts.length > 0 && (
             <>
@@ -172,13 +205,13 @@ export default function AdminDashboard() {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>לקוח</th>
-                    <th style={{ textAlign: 'center' }}>הוצאה</th>
-                    <th style={{ textAlign: 'center' }}>לידים</th>
-                    <th style={{ textAlign: 'center' }}>עסקאות</th>
-                    <th style={{ textAlign: 'center' }}>הכנסה</th>
-                    <th style={{ textAlign: 'center' }}>רווח</th>
-                    <th style={{ textAlign: 'center' }}>ROAS</th>
+                    <th className="th-sort" onClick={() => toggleSort('name')}>לקוח{arrow('name')}</th>
+                    <th className="th-sort" style={{ textAlign: 'center' }} onClick={() => toggleSort('spend')}>הוצאה{arrow('spend')}</th>
+                    <th className="th-sort" style={{ textAlign: 'center' }} onClick={() => toggleSort('leads')}>לידים{arrow('leads')}</th>
+                    <th className="th-sort" style={{ textAlign: 'center' }} onClick={() => toggleSort('closed')}>עסקאות{arrow('closed')}</th>
+                    <th className="th-sort" style={{ textAlign: 'center' }} onClick={() => toggleSort('revenue')}>הכנסה{arrow('revenue')}</th>
+                    <th className="th-sort" style={{ textAlign: 'center' }} onClick={() => toggleSort('profit')}>רווח{arrow('profit')}</th>
+                    <th className="th-sort" style={{ textAlign: 'center' }} onClick={() => toggleSort('roas')}>ROAS{arrow('roas')}</th>
                   </tr>
                 </thead>
                 <tbody>

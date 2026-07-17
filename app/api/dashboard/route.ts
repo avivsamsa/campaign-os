@@ -38,10 +38,19 @@ export async function GET(req: Request) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     const clients = (clientsRaw ?? []) as { id: string; name: string; currency: string | null }[];
 
-    const rows: ClientRow[] = await Promise.all(
+    // סדרה יומית מצטברת (לגרף מגמה)
+    const seriesMap = new Map<string, { spend: number; leads: number }>();
+
+    const results = await Promise.all(
       clients.map(async (c) => {
         try {
           const m = await queryMetrics({ client_id: c.id }, 'day', { since, until });
+          for (const day of m.rows) {
+            const b = seriesMap.get(day.key) ?? { spend: 0, leads: 0 };
+            b.spend += day.spend;
+            b.leads += day.leads;
+            seriesMap.set(day.key, b);
+          }
           const r = m.rollup;
           const pc = m.formula_columns.find(
             (fc) => /profit|רווח/i.test(fc.key) || /profit|רווח/i.test(fc.label),
@@ -59,7 +68,7 @@ export async function GET(req: Request) {
             profit,
             roas: r.spend > 0 ? r.revenue / r.spend : null,
             cpl: r.cpl,
-          };
+          } as ClientRow;
         } catch {
           return {
             id: c.id,
@@ -73,10 +82,26 @@ export async function GET(req: Request) {
             roas: null,
             cpl: null,
             error: true,
-          };
+          } as ClientRow;
         }
       }),
     );
+    const rows: ClientRow[] = results;
+
+    // ציר תאריכים רציף מ-since עד until (ממלא ימים חסרים באפס)
+    const series: { date: string; spend: number; leads: number }[] = [];
+    {
+      const d = new Date(`${since}T00:00:00Z`);
+      const end = new Date(`${until}T00:00:00Z`);
+      let guard = 0;
+      while (d <= end && guard < 400) {
+        const key = d.toISOString().slice(0, 10);
+        const b = seriesMap.get(key);
+        series.push({ date: key, spend: b?.spend ?? 0, leads: b?.leads ?? 0 });
+        d.setUTCDate(d.getUTCDate() + 1);
+        guard++;
+      }
+    }
 
     const sum = (f: (r: ClientRow) => number) => rows.reduce((s, r) => s + f(r), 0);
     const totalSpend = sum((r) => r.spend);
@@ -108,7 +133,7 @@ export async function GET(req: Request) {
       }
     }
 
-    return NextResponse.json({ since, until, totals, clients: rows, alerts });
+    return NextResponse.json({ since, until, totals, clients: rows, alerts, series });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : String(err) },
