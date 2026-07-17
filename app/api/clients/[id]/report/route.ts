@@ -71,17 +71,25 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       }
     }
 
-    // הוצאת פרסום כוללת (מ-daily_metrics דרך מנוע המטריקות)
+    // הוצאת פרסום — כוללת + פר קטגוריה (משוייכת דרך creative → product).
     let spend = 0;
+    const spendByCat = new Map<string, number>();
     try {
       const m = await queryMetrics({ client_id: params.id }, 'day', { since, until });
       spend = m.rollup.spend;
     } catch {
       spend = 0;
     }
+    try {
+      const mc = await queryMetrics({ client_id: params.id }, 'category', { since, until });
+      for (const row of mc.rows) spendByCat.set(row.key, row.spend);
+    } catch {
+      /* ignore — אין שיוך קטגוריה */
+    }
 
     const categories = products.map((p) => {
       const b = byCat.get(p.id) ?? { leads: 0, closed: 0, revenue: 0 };
+      const catSpend = spendByCat.get(p.id) ?? 0;
       return {
         id: p.id,
         name: p.name,
@@ -89,13 +97,20 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         closed: b.closed,
         revenue: b.revenue,
         profit: grossProfit(p, b.revenue, b.closed),
+        spend: catSpend,
+        cpl: b.leads > 0 ? catSpend / b.leads : null,
       };
     });
 
     const noneBucket = byCat.get(NONE);
     const uncategorized =
       noneBucket && (noneBucket.leads > 0 || noneBucket.closed > 0)
-        ? { leads: noneBucket.leads, closed: noneBucket.closed, revenue: noneBucket.revenue }
+        ? {
+            leads: noneBucket.leads,
+            closed: noneBucket.closed,
+            revenue: noneBucket.revenue,
+            spend: spendByCat.get('(none)') ?? 0,
+          }
         : null;
 
     const totalProfit = categories.reduce((s, c) => s + c.profit, 0);

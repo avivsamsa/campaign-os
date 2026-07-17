@@ -5,13 +5,22 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 type Props = { clientId: string; clientName: string; currency?: string | null };
 
-type CategoryRow = { id: string; name: string; leads: number; closed: number; revenue: number; profit: number };
+type CategoryRow = {
+  id: string;
+  name: string;
+  leads: number;
+  closed: number;
+  revenue: number;
+  profit: number;
+  spend: number;
+  cpl: number | null;
+};
 type ReportData = {
   since: string;
   until: string;
   overall: { leads: number; closed: number; revenue: number; profit: number; spend: number; cpl: number | null };
   categories: CategoryRow[];
-  uncategorized: { leads: number; closed: number; revenue: number } | null;
+  uncategorized: { leads: number; closed: number; revenue: number; spend: number } | null;
 };
 
 type Card = { label: string; value: string; accent?: boolean };
@@ -103,7 +112,9 @@ export default function ReportBuilder({ clientId, clientName, currency }: Props)
         key: `cat_${c.id}`,
         title: c.name,
         cards: [
+          { label: 'הוצאת פרסום', value: money(c.spend) },
           { label: 'לידים', value: nf0.format(c.leads) },
+          { label: 'עלות לליד', value: c.cpl != null ? money(c.cpl) : '—' },
           { label: 'עסקאות סגורות', value: nf0.format(c.closed) },
           { label: 'הכנסה', value: money(c.revenue) },
           { label: 'רווח', value: money(c.profit), accent: true },
@@ -117,6 +128,7 @@ export default function ReportBuilder({ clientId, clientName, currency }: Props)
         key: 'uncat',
         title: 'ללא קטגוריה',
         cards: [
+          { label: 'הוצאת פרסום', value: money(u.spend) },
           { label: 'לידים', value: nf0.format(u.leads) },
           { label: 'עסקאות סגורות', value: nf0.format(u.closed) },
           { label: 'הכנסה', value: money(u.revenue) },
@@ -145,11 +157,11 @@ export default function ReportBuilder({ clientId, clientName, currency }: Props)
     }
     for (const c of data.categories) {
       if (!selectedCats?.has(c.id)) continue;
-      lines.push(row(c.name, c.leads, c.closed, r2(c.revenue), r2(c.profit), ''));
+      lines.push(row(c.name, c.leads, c.closed, r2(c.revenue), r2(c.profit), r2(c.spend)));
     }
     if (includeUncat && data.uncategorized) {
       const u = data.uncategorized;
-      lines.push(row('ללא קטגוריה', u.leads, u.closed, r2(u.revenue), '', ''));
+      lines.push(row('ללא קטגוריה', u.leads, u.closed, r2(u.revenue), '', r2(u.spend)));
     }
     const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
