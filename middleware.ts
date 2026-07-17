@@ -71,6 +71,7 @@ export const config = {
     '/performance',
     '/performance/:path*',
     '/api/dashboard',
+    '/api/account-alerts',
     '/api/clients/:path*',
     '/api/leads/:path*',
     '/api/products/:path*',

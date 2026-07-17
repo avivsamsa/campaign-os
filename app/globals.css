@@ -129,6 +129,78 @@
 }
 .sidebar-logout:hover { color: var(--danger); border-color: var(--danger); }
 
+/* פעמון התראות חשבונות */
+.notif { position: relative; display: inline-flex; }
+.sidebar-brand .notif { margin-inline-start: auto; }
+.admin-topbar .notif { margin-inline-start: auto; }
+.sidebar-brand .brand-text { display: inline-flex; align-items: center; }
+.notif-bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color var(--duration) var(--ease), background var(--duration) var(--ease);
+}
+.notif-bell:hover { color: var(--text); background: var(--surface-2); }
+.notif-bell.has-alerts { color: var(--danger); }
+.notif-badge {
+  position: absolute;
+  top: -2px;
+  inset-inline-end: -2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: var(--radius-full);
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+.notif-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  inset-inline-end: 0;
+  width: 300px;
+  max-width: 84vw;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 40;
+  overflow: hidden;
+  animation: lpIn 0.18s var(--ease-out);
+}
+.notif-head { padding: 0.7rem 0.9rem; font-weight: 700; font-size: 0.9rem; border-bottom: 1px solid var(--border); }
+.notif-empty { padding: 1rem 0.9rem; color: var(--muted); font-size: 0.85rem; }
+.notif-list { max-height: 60vh; overflow-y: auto; }
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  text-decoration: none;
+}
+.notif-item:last-child { border-bottom: none; }
+.notif-item:hover { background: var(--surface-2); text-decoration: none; }
+.notif-dot { width: 9px; height: 9px; border-radius: 50%; margin-top: 5px; flex: none; }
+.notif-payment .notif-dot { background: #ef4444; }
+.notif-disabled .notif-dot { background: #b91c1c; }
+.notif-review .notif-dot { background: #f59e0b; }
+.notif-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.notif-text b { font-size: 0.88rem; }
+.notif-text span { font-size: 0.8rem; color: var(--muted); }
+
 /* ==========================================================================
    Reset & base
    ========================================================================== */
@@ -1967,6 +2039,8 @@ body.portal-mode .app-main { margin-right: 0; }
     cursor: pointer;
   }
   .admin-topbar-brand { font-weight: 700; font-size: 1rem; color: var(--text); }
+  /* הפעמון מוצג בסרגל העליון במובייל — מוסתר בכותרת המגירה כדי לא לשכפל */
+  .sidebar-brand .notif { display: none; }
 
   .sidebar {
     transform: translateX(100%);

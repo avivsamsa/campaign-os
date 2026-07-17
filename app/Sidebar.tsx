@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import ThemeToggle from './ThemeToggle';
+import NotificationBell from './NotificationBell';
 
 type ClientOption = { id: string; name: string };
 
@@ -95,6 +96,7 @@ export default function Sidebar() {
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
         </button>
         <span className="admin-topbar-brand">Campaign OS</span>
+        <NotificationBell />
       </header>
 
       <div
@@ -104,7 +106,7 @@ export default function Sidebar() {
       />
 
       <aside className={`sidebar ${open ? 'open' : ''}`.trim()}>
-        <div className="sidebar-brand">Campaign OS</div>
+        <div className="sidebar-brand"><span className="brand-text">Campaign OS</span><NotificationBell /></div>
 
         {/* בורר לקוח גלובלי — בסגנון Facebook Business */}
         <div className="client-switcher">
