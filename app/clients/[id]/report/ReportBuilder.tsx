@@ -49,6 +49,8 @@ export default function ReportBuilder({ clientId, clientName, currency }: Props)
 
   const cur = currency || '';
   const money = (n: number) => `${nf2.format(n)}${cur ? ' ' + cur : ''}`;
+  const roasStr = (revenue: number, spend: number) =>
+    spend > 0 ? `${nf2.format(revenue / spend)}×` : '—';
 
   const load = useCallback(() => {
     setLoading(true);
@@ -101,6 +103,7 @@ export default function ReportBuilder({ clientId, clientName, currency }: Props)
           { label: 'עלות לליד', value: o.cpl != null ? money(o.cpl) : '—' },
           { label: 'עסקאות סגורות', value: nf0.format(o.closed) },
           { label: 'הכנסה', value: money(o.revenue) },
+          { label: 'ROAS', value: roasStr(o.revenue, o.spend) },
           { label: 'רווח', value: money(o.profit), accent: true },
         ],
       });
@@ -117,6 +120,7 @@ export default function ReportBuilder({ clientId, clientName, currency }: Props)
           { label: 'עלות לליד', value: c.cpl != null ? money(c.cpl) : '—' },
           { label: 'עסקאות סגורות', value: nf0.format(c.closed) },
           { label: 'הכנסה', value: money(c.revenue) },
+          { label: 'ROAS', value: roasStr(c.revenue, c.spend) },
           { label: 'רווח', value: money(c.profit), accent: true },
         ],
       });
@@ -142,10 +146,19 @@ export default function ReportBuilder({ clientId, clientName, currency }: Props)
 
   function downloadCsv() {
     if (!data) return;
-    const header = ['מקטע', 'לידים', 'עסקאות סגורות', 'הכנסה', 'רווח', 'הוצאת פרסום'];
+    const header = ['מקטע', 'לידים', 'עסקאות סגורות', 'הכנסה', 'רווח', 'הוצאת פרסום', 'ROAS'];
     const lines = [header.join(',')];
-    const row = (name: string, leads: number, closed: number, revenue: number, profit: number | '', spend: number | '') =>
-      [name, leads, closed, revenue, profit, spend]
+    const roasNum = (revenue: number, spend: number): number | '' => (spend > 0 ? r2(revenue / spend) : '');
+    const row = (
+      name: string,
+      leads: number,
+      closed: number,
+      revenue: number,
+      profit: number | '',
+      spend: number | '',
+      roasVal: number | '',
+    ) =>
+      [name, leads, closed, revenue, profit, spend, roasVal]
         .map((s) => {
           const str = String(s);
           return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
@@ -153,15 +166,15 @@ export default function ReportBuilder({ clientId, clientName, currency }: Props)
         .join(',');
     if (includeOverall) {
       const o = data.overall;
-      lines.push(row('סיכום כללי', o.leads, o.closed, r2(o.revenue), r2(o.profit), r2(o.spend)));
+      lines.push(row('סיכום כללי', o.leads, o.closed, r2(o.revenue), r2(o.profit), r2(o.spend), roasNum(o.revenue, o.spend)));
     }
     for (const c of data.categories) {
       if (!selectedCats?.has(c.id)) continue;
-      lines.push(row(c.name, c.leads, c.closed, r2(c.revenue), r2(c.profit), r2(c.spend)));
+      lines.push(row(c.name, c.leads, c.closed, r2(c.revenue), r2(c.profit), r2(c.spend), roasNum(c.revenue, c.spend)));
     }
     if (includeUncat && data.uncategorized) {
       const u = data.uncategorized;
-      lines.push(row('ללא קטגוריה', u.leads, u.closed, r2(u.revenue), '', r2(u.spend)));
+      lines.push(row('ללא קטגוריה', u.leads, u.closed, r2(u.revenue), '', r2(u.spend), roasNum(u.revenue, u.spend)));
     }
     const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
