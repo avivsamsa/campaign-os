@@ -1,10 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getSupabaseClient } from '@/lib/supabase';
-import type { Client, ClientBrain } from '@/lib/types';
-import type { Formula } from '@/lib/profit';
-import { fetchClientLeads } from '@/lib/leads';
-import ClientTabs from './ClientTabs';
+import type { Client } from '@/lib/types';
+import ClientOverview from './ClientOverview';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,20 +16,6 @@ export default async function ClientPage({ params }: { params: { id: string } })
     .single();
 
   if (error || !client) notFound();
-
-  const { data: brain } = await supabase
-    .from('client_brain')
-    .select('*')
-    .eq('client_id', params.id)
-    .maybeSingle();
-
-  const { data: profitConfig } = await supabase
-    .from('profit_config')
-    .select('variables, formulas')
-    .eq('client_id', params.id)
-    .maybeSingle();
-
-  const leads = await fetchClientLeads(params.id);
   const typedClient = client as Client;
 
   return (
@@ -39,14 +23,13 @@ export default async function ClientPage({ params }: { params: { id: string } })
       <div className="breadcrumb">
         <Link href="/clients">לקוחות</Link> / {typedClient.name}
       </div>
-      <ClientTabs
-        client={typedClient}
-        brain={(brain ?? null) as ClientBrain | null}
-        profitConfig={
-          (profitConfig as { variables: Record<string, unknown>; formulas: Formula[] } | null) ?? null
-        }
-        leads={leads}
-      />
+      <div className="row-between">
+        <h1>{typedClient.name}</h1>
+        <Link className="btn" href={`/clients/${params.id}/settings`}>
+          הגדרות לקוח
+        </Link>
+      </div>
+      <ClientOverview clientId={params.id} currency={typedClient.currency} />
     </main>
   );
 }

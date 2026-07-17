@@ -2246,3 +2246,130 @@ body.portal-mode .app-main { margin-right: 0; }
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ==========================================================================
+   בורר לקוח גלובלי + אזור עבודה (Facebook-Business style)
+   ========================================================================== */
+
+.client-switcher {
+  padding: 0 1.1rem 0.9rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.client-switcher-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted-2);
+  margin-bottom: 0.35rem;
+  padding: 0 0.1rem;
+}
+.client-switcher-select {
+  width: 100%;
+  font-weight: 600;
+}
+
+.sidebar-section {
+  padding: 0.35rem 0.85rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted-2);
+}
+.sidebar-back {
+  margin-top: 0.5rem;
+  font-size: 0.82rem !important;
+  color: var(--muted) !important;
+}
+
+/* ==========================================================================
+   סקירת לקוח — כרטיסי KPI
+   ========================================================================== */
+
+.overview-sub {
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin: 0.25rem 0 1.25rem;
+}
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.85rem;
+}
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.1rem 1.2rem;
+  box-shadow: var(--shadow-xs);
+}
+.kpi-label {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 500;
+  margin-bottom: 0.35rem;
+}
+.kpi-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+}
+
+/* ==========================================================================
+   מסך טעינה בכניסה למערכת
+   ========================================================================== */
+
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(120% 120% at 50% 0%, var(--surface) 0%, var(--bg) 60%),
+    var(--bg);
+  opacity: 1;
+  transition: opacity 400ms var(--ease);
+}
+.splash--leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+.splash-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  animation: splash-rise 500ms var(--ease-out) both;
+}
+.splash-brand {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.splash-spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  border: 3px solid var(--surface-3);
+  border-top-color: var(--primary);
+  animation: splash-spin 800ms linear infinite;
+}
+.splash-label {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+@keyframes splash-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes splash-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}

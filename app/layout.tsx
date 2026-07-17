@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Heebo } from 'next/font/google';
 import './globals.css';
 import Sidebar from './Sidebar';
+import SplashScreen from './SplashScreen';
 
 // Heebo — Hebrew-first sans serif designed by Oded Ezer; consistent latin + hebrew
 const heebo = Heebo({
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
       <body>
+        <SplashScreen />
         <div className="app-shell">
           <Sidebar />
           <div className="app-main">{children}</div>
