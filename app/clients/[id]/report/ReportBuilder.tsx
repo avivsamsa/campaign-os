@@ -43,7 +43,9 @@ export default function ReportBuilder({ clientId, clientName, currency }: Props)
   const [error, setError] = useState('');
 
   const cur = currency || '';
+  const money = (n: number) => `${nf2.format(n)}${cur ? ' ' + cur : ''}`;
   const groupBy = BREAKDOWNS.find((b) => b.value === breakdown)!.groupBy;
+  const breakdownLabel = BREAKDOWNS.find((b) => b.value === breakdown)!.label;
 
   const load = useCallback(() => {
     setLoading(true);
@@ -94,6 +96,38 @@ export default function ReportBuilder({ clientId, clientName, currency }: Props)
     return [...base, ...formula];
   }, [result]);
 
+  // כרטיסי KPI מסכמים (rollup) — כמו הדשבורד. משמשים גם ל-PDF.
+  const kpis = useMemo(() => {
+    const r = result?.rollup;
+    if (!r) return [] as { label: string; value: string; accent?: boolean }[];
+    const cols = result?.formula_columns ?? [];
+    const profitCol = cols.find(
+      (fc) => /profit|רווח/i.test(fc.key) || /profit|רווח/i.test(fc.label),
+    );
+    const profitVal =
+      profitCol && r.computed?.[profitCol.key] != null
+        ? (r.computed[profitCol.key] as number)
+        : r.revenue - r.spend;
+    const profitLabel = profitCol ? profitCol.label : 'רווח (אומדן)';
+    const otherCols = cols.filter((fc) => fc.key !== profitCol?.key);
+    return [
+      { label: 'הוצאה', value: money(r.spend) },
+      { label: 'לידים', value: nf0.format(r.leads) },
+      { label: 'עלות לליד (CPL)', value: r.cpl != null ? money(r.cpl) : '—' },
+      { label: 'עסקאות סגורות', value: nf0.format(r.closes) },
+      { label: 'הכנסה', value: money(r.revenue) },
+      { label: profitLabel, value: money(profitVal), accent: true },
+      { label: 'קליקים', value: nf0.format(r.clicks) },
+      { label: 'CTR', value: `${nf2.format(r.ctr)}%` },
+      { label: 'CPM', value: money(r.cpm) },
+      ...otherCols.map((fc) => {
+        const v = r.computed?.[fc.key];
+        return { label: fc.label, value: v != null ? nf2.format(v) : '—' };
+      }),
+    ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result, cur]);
+
   function fmt(v: number | null, kind: Col['kind']): string {
     if (v == null) return '—';
     if (kind === 'int') return nf0.format(v);
@@ -132,19 +166,33 @@ export default function ReportBuilder({ clientId, clientName, currency }: Props)
   }
 
   return (
-    <main className="container">
-      <div className="breadcrumb">
+    <main className="container print-area">
+      <div className="breadcrumb no-print">
         <Link href="/clients">לקוחות</Link> /{' '}
         <Link href={`/clients/${clientId}`}>{clientName}</Link> / דוח
       </div>
-      <div className="row-between">
+      <div className="row-between no-print">
         <h1>דוח נתונים — {clientName}</h1>
-        <button className="btn primary" onClick={downloadCsv} disabled={rows.length === 0}>
-          הורד CSV
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button className="btn" onClick={downloadCsv} disabled={rows.length === 0}>
+            הורד CSV
+          </button>
+          <button className="btn primary" onClick={() => window.print()} disabled={rows.length === 0}>
+            הורד PDF
+          </button>
+        </div>
       </div>
 
-      <div className="card">
+      {/* כותרת ל-PDF בלבד (מוצגת בהדפסה) */}
+      <div className="print-only report-print-head">
+        <div className="report-print-brand">Campaign OS</div>
+        <h1>{clientName}</h1>
+        <div className="report-print-meta">
+          דוח ביצועים · פילוח: {breakdownLabel} · {since} — {until}
+        </div>
+      </div>
+
+      <div className="card no-print">
         <div className="toolbar">
           <div className="field">
             <label>פילוח</label>
@@ -174,9 +222,26 @@ export default function ReportBuilder({ clientId, clientName, currency }: Props)
 
       {error && <div className="banner-error">{error}</div>}
 
+      {/* כרטיסי סיכום — כמו הדשבורד */}
+      {kpis.length > 0 && (
+        <>
+          <h2 className="report-section-title">סיכום · {since} — {until}</h2>
+          <div className="kpi-grid">
+            {kpis.map((k) => (
+              <div key={k.label} className={`kpi-card${k.accent ? ' kpi-card--accent' : ''}`}>
+                <div className="kpi-label">{k.label}</div>
+                <div className="kpi-value">{k.value}</div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
       {rows.length === 0 && !loading ? (
         <div className="card muted">אין נתונים בטווח שנבחר.</div>
       ) : (
+        <>
+        <h2 className="report-section-title">פירוט לפי {breakdownLabel}</h2>
         <div style={{ overflowX: 'auto' }}>
           <table className="table">
             <thead>
@@ -203,6 +268,7 @@ export default function ReportBuilder({ clientId, clientName, currency }: Props)
             </tbody>
           </table>
         </div>
+        </>
       )}
     </main>
   );

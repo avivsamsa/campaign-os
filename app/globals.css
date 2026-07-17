@@ -2378,3 +2378,57 @@ body.portal-mode .app-main { margin-right: 0; }
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ==========================================================================
+   דוח PDF / הדפסה
+   ========================================================================== */
+
+.report-section-title {
+  margin: 1.75rem 0 0.85rem;
+  font-size: 1.05rem;
+}
+.print-only { display: none; }
+.report-print-head { margin-bottom: 1rem; }
+.report-print-brand {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--primary);
+  font-size: 1rem;
+}
+.report-print-head h1 { margin: 0.15rem 0; }
+.report-print-meta { color: var(--muted); font-size: 0.9rem; }
+
+@media print {
+  /* פלטת הדפסה בהירה — לא תלוי ב-theme הכהה */
+  :root, :root[data-theme='light'], :root:not([data-theme]) {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f5f2ee;
+    --surface-3: #ece7e0;
+    --border: #ddd6cc;
+    --border-strong: #c9c0b3;
+    --text: #1a1512;
+    --text-2: #3a332e;
+    --muted: #6b6259;
+    --muted-2: #8a8177;
+    --primary: #a8325a;
+    --primary-strong: #7f2244;
+    --primary-soft: #f6e7ee;
+  }
+  html, body { background: #fff !important; }
+  .sidebar, .admin-topbar, .sidebar-scrim, .no-print { display: none !important; }
+  .app-main { margin: 0 !important; }
+  .container { max-width: none !important; padding: 0.5rem 0.75rem !important; }
+  .print-only { display: block !important; }
+
+  /* כרטיסים — גבולות במקום צללים, וברקע צבע מלא כשמודפס */
+  .kpi-card, .card, .table {
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .kpi-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 0.6rem !important; }
+  .kpi-card { break-inside: avoid; page-break-inside: avoid; }
+  table, tr, td, th { break-inside: avoid; }
+  a[href]::after { content: ''; } /* לא להדפיס URLs אחרי לינקים */
+}
