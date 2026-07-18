@@ -31,6 +31,15 @@ const nf = new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 });
 const dt = (iso: string) =>
   new Date(iso).toLocaleString('he-IL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 
+function kindColor(k?: string): string {
+  switch (k) {
+    case 'status': return '#3b82f6';
+    case 'purchase': return '#16a34a';
+    case 'irrelevant': return '#ef4444';
+    default: return colors.primary;
+  }
+}
+
 function noteText(n: Note): string {
   const m = n.meta ?? {};
   switch (n.kind) {
@@ -207,7 +216,7 @@ export default function LeadDetail() {
           <Text style={s.sub}>עדיין אין רשומות.</Text>
         ) : (
           notes.map((n) => (
-            <View key={n.id} style={s.noteItem}>
+            <View key={n.id} style={[s.noteItem, { borderRightWidth: 3, borderRightColor: kindColor(n.kind) }]}>
               <Text style={s.noteTime}>{dt(n.created_at)}</Text>
               <Text style={s.noteBody}>{noteText(n)}</Text>
             </View>
