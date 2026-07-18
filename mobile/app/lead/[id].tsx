@@ -18,7 +18,9 @@ import {
   getLeads,
   getNotes,
   getReasons,
+  getStatuses,
   updateLead,
+  type CustomStatus,
   type Lead,
   type Note,
   type Reason,
@@ -43,6 +45,7 @@ export default function LeadDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [lead, setLead] = useState<Lead | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
+  const [statuses, setStatuses] = useState<CustomStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [body, setBody] = useState('');
   const [saving, setSaving] = useState(false);
@@ -56,9 +59,14 @@ export default function LeadDetail() {
 
   const load = useCallback(async () => {
     try {
-      const [leads, ns] = await Promise.all([getLeads(), getNotes(id).catch(() => [])]);
+      const [leads, ns, sts] = await Promise.all([
+        getLeads(),
+        getNotes(id).catch(() => []),
+        getStatuses().catch(() => []),
+      ]);
       setLead(leads.find((l) => l.id === id) ?? null);
       setNotes(ns);
+      setStatuses(sts);
     } finally {
       setLoading(false);
     }
@@ -173,6 +181,14 @@ export default function LeadDetail() {
             return (
               <Pressable key={st} onPress={() => changeStatus(st)} style={[s.statusChip, { borderColor: c }, active && { backgroundColor: c + '33' }]}>
                 <Text style={[s.statusChipText, { color: active ? c : colors.text2 }]}>{statusLabel[st]}</Text>
+              </Pressable>
+            );
+          })}
+          {statuses.map((cs) => {
+            const active = lead.status === cs.id;
+            return (
+              <Pressable key={cs.id} onPress={() => changeStatus(cs.id)} style={[s.statusChip, { borderColor: colors.primary }, active && { backgroundColor: colors.primarySoft }]}>
+                <Text style={[s.statusChipText, { color: active ? colors.primary : colors.text2 }]}>{cs.label}</Text>
               </Pressable>
             );
           })}
