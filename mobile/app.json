@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Campaign OS",
+    "slug": "campaign-os",
+    "version": "1.0.0",
+    "scheme": "campaignos",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0E0C0B"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "il.co.avivsamsa.campaignos"
+    },
+    "android": {
+      "package": "il.co.avivsamsa.campaignos",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#A8325A"
+      }
+    },
+    "plugins": ["expo-router", "expo-secure-store"],
+    "experiments": { "typedRoutes": true }
+  }
+}
