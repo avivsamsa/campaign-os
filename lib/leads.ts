@@ -63,6 +63,7 @@ export type EnrichedLead = {
   notes_count: number;
   form_id: string | null;
   category_id: string | null; // המוצר/קטגוריה שאליו מנותב הטופס
+  category_name: string | null;
   reason_id: string | null; // סיבת "לא רלוונטי" (אם נבחרה)
   reason_label: string | null;
 };
@@ -102,6 +103,13 @@ export async function fetchClientLeads(clientId: string): Promise<EnrichedLead[]
     .select('form_id, product_id')
     .eq('client_id', clientId);
   const formToProduct = new Map((routes ?? []).map((r) => [r.form_id as string, r.product_id as string]));
+
+  // שם הקטגוריה (מוצר) — לתצוגה/שער בחירה באפליקציה
+  const { data: products } = await sb
+    .from('products')
+    .select('id, name')
+    .eq('client_id', clientId);
+  const productName = new Map((products ?? []).map((p) => [p.id as string, p.name as string]));
 
   const adIds = [...new Set(rows.map((l) => l.ad_id).filter(Boolean) as string[])];
   const adInfo = new Map<
@@ -199,6 +207,9 @@ export async function fetchClientLeads(clientId: string): Promise<EnrichedLead[]
       notes_count: notesCount.get(l.id as string) ?? 0,
       form_id: (l.form_id as string) ?? null,
       category_id: l.form_id ? formToProduct.get(l.form_id as string) ?? null : null,
+      category_name: l.form_id
+        ? productName.get(formToProduct.get(l.form_id as string) ?? '') ?? null
+        : null,
       reason_id: (l.reason_id as string) ?? null,
       reason_label: l.reason_id ? reasonLabel.get(l.reason_id as string) ?? null : null,
     };

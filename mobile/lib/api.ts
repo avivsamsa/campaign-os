@@ -17,6 +17,7 @@ export type Lead = {
   notes_count: number;
   reason_label: string | null;
   category_id: string | null;
+  category_name: string | null;
 };
 
 export type CustomStatus = { id: string; label: string; color: string };
