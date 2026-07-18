@@ -6,7 +6,6 @@ import { useAuth } from '../lib/auth';
 import { useData } from '../lib/data';
 import { colors } from '../lib/theme';
 import { FadeIn, PressableScale } from '../lib/anim';
-import { NotificationsCurtain } from '../components/NotificationsCurtain';
 
 const nf = new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 });
 const rowDir = I18nManager.isRTL ? 'row' : 'row-reverse';
@@ -25,15 +24,11 @@ export default function Dashboard() {
   const { clientName } = useAuth();
   const { dashboard, leads, ready, refresh } = useData();
   const [refreshing, setRefreshing] = useState(false);
-  const [curtain, setCurtain] = useState(false);
 
-  const newLeads = useMemo(
-    () => leads.filter((l) => l.status === 'new').sort((a, b) => (a.created_at < b.created_at ? 1 : -1)),
-    [leads],
-  );
+  // הבאדג' = בדיוק מספר ההתראות שמופיע בעמוד ההתראות (לידים חדשים)
+  const newCount = useMemo(() => leads.filter((l) => l.status === 'new').length, [leads]);
 
   const t = dashboard?.totals;
-  const newCount = newLeads.length || t?.new || 0;
   const value = (k: KpiKey, money?: boolean) => {
     const v = t ? t[k] : 0;
     return money ? `₪${nf.format(v)}` : nf.format(v);
@@ -59,11 +54,11 @@ export default function Dashboard() {
             </Pressable>
           ),
           headerRight: () => (
-            <Pressable onPress={() => setCurtain(true)} hitSlop={12} accessibilityLabel="התראות" style={s.bellWrap}>
-              <Feather name="bell" size={21} color={colors.text2} />
+            <Pressable onPress={() => router.push('/notifications')} hitSlop={12} accessibilityLabel="התראות" style={s.bellWrap}>
+              <Feather name="bell" size={22} color={colors.text2} />
               {newCount > 0 ? (
                 <View style={s.badge}>
-                  <Text style={s.badgeText}>{newCount > 99 ? '99+' : newCount}</Text>
+                  <Text style={s.badgeText} numberOfLines={1}>{newCount > 99 ? '99+' : newCount}</Text>
                 </View>
               ) : null}
             </Pressable>
@@ -125,13 +120,6 @@ export default function Dashboard() {
           </View>
         ) : null}
       </ScrollView>
-
-      <NotificationsCurtain
-        visible={curtain}
-        leads={newLeads}
-        onClose={() => setCurtain(false)}
-        onOpenLead={(id) => router.push(`/lead/${id}`)}
-      />
     </View>
   );
 }
@@ -140,9 +128,9 @@ const s = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: colors.bg },
   center: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
   headerText: { color: colors.muted, fontSize: 15, marginHorizontal: 8 },
-  bellWrap: { paddingHorizontal: 8, paddingVertical: 2 },
-  badge: { position: 'absolute', top: -3, right: 2, backgroundColor: colors.primary, minWidth: 17, height: 17, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 1.5, borderColor: colors.bg },
-  badgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },
+  bellWrap: { paddingHorizontal: 10, paddingVertical: 6, marginRight: 2 },
+  badge: { position: 'absolute', top: 0, right: 2, backgroundColor: colors.primary, minWidth: 19, height: 19, borderRadius: 10, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, borderWidth: 2, borderColor: colors.bg },
+  badgeText: { color: '#fff', fontSize: 10.5, fontWeight: '800', lineHeight: 14, includeFontPadding: false, textAlign: 'center' },
   kicker: { color: colors.muted2, fontSize: 12.5, fontWeight: '700', letterSpacing: 1, textAlign: 'right', marginBottom: 14 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   cardWrap: { width: '47%', flexGrow: 1 },

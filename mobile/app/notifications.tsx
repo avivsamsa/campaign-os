@@ -1,63 +1,110 @@
-import { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, I18nManager, Pressable, StyleSheet, Text, View } from 'react-native';
-import { router, useFocusEffect } from 'expo-router';
-import { getLeads, type Lead } from '../lib/api';
-import { colors, formatPhone } from '../lib/theme';
+import { useMemo, useState } from 'react';
+import { FlatList, I18nManager, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { Stack, router } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
+import { useData } from '../lib/data';
+import { colors } from '../lib/theme';
+import { FadeIn } from '../lib/anim';
 
 const rowDir = I18nManager.isRTL ? 'row' : 'row-reverse';
-const dtl = (iso: string) =>
-  new Date(iso).toLocaleString('he-IL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+function timeAgo(iso: string): string {
+  const diff = Math.max(0, Date.now() - new Date(iso).getTime());
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'הרגע';
+  if (m < 60) return `לפני ${m} ד׳`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `לפני ${h} ש׳`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `לפני ${d} י׳`;
+  return `לפני ${Math.floor(d / 7)} שב׳`;
+}
+
+function initials(name: string | null): string {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/).slice(0, 2);
+  return parts.map((p) => p[0]).join('').toUpperCase() || '?';
+}
 
 export default function Notifications() {
-  const [newLeads, setNewLeads] = useState<Lead[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { leads, ready, refresh } = useData();
+  const [refreshing, setRefreshing] = useState(false);
 
-  const load = useCallback(async () => {
-    try {
-      const ls = await getLeads();
-      setNewLeads(ls.filter((l) => l.status === 'new'));
-    } catch {
-      /* ignore */
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const newLeads = useMemo(
+    () => leads.filter((l) => l.status === 'new').sort((a, b) => (a.created_at < b.created_at ? 1 : -1)),
+    [leads],
+  );
 
-  useFocusEffect(useCallback(() => { load(); }, [load]));
-
-  if (loading) return <View style={s.center}><ActivityIndicator color={colors.primary} /></View>;
+  async function onRefresh() {
+    setRefreshing(true);
+    await refresh();
+    setRefreshing(false);
+  }
 
   return (
-    <FlatList
-      style={s.wrap}
-      data={newLeads}
-      keyExtractor={(l) => l.id}
-      contentContainerStyle={{ padding: 16, gap: 10 }}
-      ListHeaderComponent={newLeads.length > 0 ? <Text style={s.head}>לידים חדשים שממתינים לטיפול</Text> : null}
-      ListEmptyComponent={<Text style={s.empty}>אין התראות חדשות ✓</Text>}
-      renderItem={({ item }) => (
-        <Pressable style={[s.item, { flexDirection: rowDir }]} onPress={() => router.push(`/lead/${item.id}`)}>
-          <View style={s.dot} />
-          <View style={{ flex: 1 }}>
-            <Text style={s.title}>ליד חדש: {item.name ?? '—'}</Text>
-            <Text style={s.sub}>
-              {item.phone ? formatPhone(item.phone) : ''}
-              {item.created_at ? ` · ${dtl(item.created_at)}` : ''}
-            </Text>
-          </View>
-        </Pressable>
-      )}
-    />
+    <View style={s.wrap}>
+      <Stack.Screen options={{ title: 'התראות' }} />
+      <FlatList
+        data={newLeads}
+        keyExtractor={(l) => l.id}
+        contentContainerStyle={{ paddingBottom: 24 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+        ListHeaderComponent={newLeads.length ? <Text style={s.sectionHead}>חדש</Text> : null}
+        ListEmptyComponent={
+          !ready ? null : (
+            <View style={s.empty}>
+              <View style={s.emptyIcon}><Feather name="bell" size={26} color={colors.muted} /></View>
+              <Text style={s.emptyText}>אין התראות חדשות</Text>
+              <Text style={s.emptySub}>כאן יופיעו לידים חדשים ברגע שייכנסו</Text>
+            </View>
+          )
+        }
+        renderItem={({ item, index }) => (
+          <FadeIn index={index} delay={20}>
+            <Pressable
+              style={({ pressed }) => [s.row, { flexDirection: rowDir }, pressed && s.rowPressed]}
+              onPress={() => router.push(`/lead/${item.id}`)}
+            >
+              <View style={s.avatarWrap}>
+                <View style={s.avatar}><Text style={s.avatarTxt}>{initials(item.name)}</Text></View>
+                <View style={s.avatarBadge}><Feather name="user-plus" size={11} color="#fff" /></View>
+              </View>
+
+              <View style={{ flex: 1 }}>
+                <Text style={s.title} numberOfLines={2}>
+                  <Text style={s.titleBold}>{item.name || 'ליד חדש'}</Text>
+                  {' — ליד חדש ממתין לטיפול'}
+                </Text>
+                <Text style={s.meta} numberOfLines={1}>
+                  {item.category_name ? `${item.category_name} · ` : ''}
+                  {timeAgo(item.created_at)}
+                </Text>
+              </View>
+
+              <View style={s.unreadDot} />
+            </Pressable>
+          </FadeIn>
+        )}
+      />
+    </View>
   );
 }
 
 const s = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: colors.bg },
-  center: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
-  head: { color: colors.muted, fontSize: 13, fontWeight: '700', textAlign: 'right', marginBottom: 2 },
-  empty: { color: colors.muted, textAlign: 'center', marginTop: 50 },
-  item: { alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 14, padding: 14 },
-  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primary },
-  title: { color: colors.text, fontSize: 15, fontWeight: '700', textAlign: 'right' },
-  sub: { color: colors.muted, fontSize: 13, textAlign: 'right', marginTop: 3 },
+  sectionHead: { color: colors.text, fontSize: 20, fontWeight: '800', textAlign: 'right', paddingHorizontal: 18, paddingTop: 14, paddingBottom: 6 },
+  row: { alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 13, backgroundColor: 'rgba(168,50,90,0.06)' },
+  rowPressed: { backgroundColor: colors.surface2 },
+  avatarWrap: { width: 54, height: 54 },
+  avatar: { width: 54, height: 54, borderRadius: 27, backgroundColor: colors.surface2, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
+  avatarTxt: { color: colors.text2, fontSize: 19, fontWeight: '800' },
+  avatarBadge: { position: 'absolute', bottom: -1, left: -1, width: 22, height: 22, borderRadius: 11, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.bg },
+  title: { color: colors.text2, fontSize: 15, textAlign: 'right', lineHeight: 21 },
+  titleBold: { color: colors.text, fontWeight: '800' },
+  meta: { color: colors.muted, fontSize: 13, textAlign: 'right', marginTop: 3 },
+  unreadDot: { width: 11, height: 11, borderRadius: 6, backgroundColor: colors.primary },
+  empty: { alignItems: 'center', paddingTop: 90, gap: 8 },
+  emptyIcon: { width: 68, height: 68, borderRadius: 34, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
+  emptyText: { color: colors.text2, fontSize: 16, fontWeight: '700' },
+  emptySub: { color: colors.muted2, fontSize: 13.5 },
 });
