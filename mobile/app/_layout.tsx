@@ -13,14 +13,16 @@ import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from '../lib/auth';
+import { DataProvider } from '../lib/data';
 import { colors } from '../lib/theme';
 
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <SafeAreaProvider>
-        <StatusBar style="light" />
-        <Stack
+      <DataProvider>
+        <SafeAreaProvider>
+          <StatusBar style="light" />
+          <Stack
           screenOptions={{
             headerStyle: { backgroundColor: colors.bg },
             headerTintColor: colors.text,
@@ -35,9 +37,10 @@ export default function RootLayout() {
           <Stack.Screen name="leads" options={{ title: 'הלידים שלך' }} />
           <Stack.Screen name="lead/[id]" options={{ title: 'פרטי ליד' }} />
           <Stack.Screen name="notifications" options={{ title: 'התראות' }} />
-          <Stack.Screen name="settings" options={{ title: 'חשבון' }} />
-        </Stack>
-      </SafeAreaProvider>
+            <Stack.Screen name="settings" options={{ title: 'חשבון' }} />
+          </Stack>
+        </SafeAreaProvider>
+      </DataProvider>
     </AuthProvider>
   );
 }

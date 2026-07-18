@@ -1,11 +1,12 @@
-import { useCallback, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, I18nManager, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Stack, router, useFocusEffect } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { getDashboard, type DashboardData } from '../lib/api';
 import { useAuth } from '../lib/auth';
+import { useData } from '../lib/data';
 import { colors } from '../lib/theme';
 import { FadeIn, PressableScale } from '../lib/anim';
+import { NotificationsCurtain } from '../components/NotificationsCurtain';
 
 const nf = new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 });
 const rowDir = I18nManager.isRTL ? 'row' : 'row-reverse';
@@ -22,44 +23,43 @@ const KPIS: { key: KpiKey; label: string; icon: keyof typeof Feather.glyphMap; m
 
 export default function Dashboard() {
   const { clientName } = useAuth();
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { dashboard, leads, ready, refresh } = useData();
   const [refreshing, setRefreshing] = useState(false);
+  const [curtain, setCurtain] = useState(false);
 
-  const load = useCallback(async () => {
-    try {
-      setData(await getDashboard());
-    } catch (e) {
-      if (e instanceof Error && e.message === 'UNAUTHORIZED') router.replace('/login');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
+  const newLeads = useMemo(
+    () => leads.filter((l) => l.status === 'new').sort((a, b) => (a.created_at < b.created_at ? 1 : -1)),
+    [leads],
+  );
 
-  useFocusEffect(useCallback(() => { load(); }, [load]));
-
-  const t = data?.totals;
-  const newCount = t?.new ?? 0;
+  const t = dashboard?.totals;
+  const newCount = newLeads.length || t?.new || 0;
   const value = (k: KpiKey, money?: boolean) => {
     const v = t ? t[k] : 0;
     return money ? `₪${nf.format(v)}` : nf.format(v);
   };
 
-  if (loading) return <View style={s.center}><ActivityIndicator color={colors.primary} /></View>;
+  async function onRefresh() {
+    setRefreshing(true);
+    await refresh();
+    setRefreshing(false);
+  }
+
+  // ספינר רק בטעינה הראשונה אי-פעם; אחר-כך הכל מיידי מהמאגר
+  if (!ready && !dashboard) return <View style={s.center}><ActivityIndicator color={colors.primary} /></View>;
 
   return (
     <View style={s.wrap}>
       <Stack.Screen
         options={{
-          title: clientName ?? 'הבית שלי',
+          title: clientName ?? dashboard?.client_name ?? 'הבית שלי',
           headerLeft: () => (
             <Pressable onPress={() => router.push('/settings')} hitSlop={12} accessibilityLabel="חשבון">
               <Text style={s.headerText}>חשבון</Text>
             </Pressable>
           ),
           headerRight: () => (
-            <Pressable onPress={() => router.push('/notifications')} hitSlop={12} accessibilityLabel="התראות" style={s.bellWrap}>
+            <Pressable onPress={() => setCurtain(true)} hitSlop={12} accessibilityLabel="התראות" style={s.bellWrap}>
               <Feather name="bell" size={21} color={colors.text2} />
               {newCount > 0 ? (
                 <View style={s.badge}>
@@ -73,7 +73,7 @@ export default function Dashboard() {
 
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingTop: 14 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={colors.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         showsVerticalScrollIndicator={false}
       >
         <FadeIn><Text style={s.kicker}>במבט-על</Text></FadeIn>
@@ -101,11 +101,11 @@ export default function Dashboard() {
           </PressableScale>
         </FadeIn>
 
-        {data && data.categories.length > 1 ? (
+        {dashboard && dashboard.categories.length > 1 ? (
           <View style={{ marginTop: 28 }}>
             <FadeIn delay={360}><Text style={s.section}>הקטגוריות שלי</Text></FadeIn>
             <View style={{ gap: 10, marginTop: 12 }}>
-              {data.categories.map((c, i) => (
+              {dashboard.categories.map((c, i) => (
                 <FadeIn key={c.key} index={i} delay={420}>
                   <PressableScale
                     style={[s.catRow, { flexDirection: rowDir }]}
@@ -125,6 +125,13 @@ export default function Dashboard() {
           </View>
         ) : null}
       </ScrollView>
+
+      <NotificationsCurtain
+        visible={curtain}
+        leads={newLeads}
+        onClose={() => setCurtain(false)}
+        onOpenLead={(id) => router.push(`/lead/${id}`)}
+      />
     </View>
   );
 }

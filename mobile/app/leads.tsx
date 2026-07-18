@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -11,44 +11,25 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { getLeads, getStatuses, type CustomStatus, type Lead } from '../lib/api';
-import { useAuth } from '../lib/auth';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { Feather, FontAwesome } from '@expo/vector-icons';
+import { useData } from '../lib/data';
 import { colors, formatPhone, statusColor, statusLabel } from '../lib/theme';
 
 const nf = new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 });
 
 export default function Leads() {
-  const { signOut } = useAuth();
+  const { leads, statuses, ready, refresh } = useData();
   const { category, name } = useLocalSearchParams<{ category?: string; name?: string }>();
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [statuses, setStatuses] = useState<CustomStatus[]>([]);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [err, setErr] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
 
-  const load = useCallback(async () => {
-    setErr('');
-    try {
-      const [ls, st] = await Promise.all([getLeads(), getStatuses().catch(() => [])]);
-      setLeads(ls);
-      setStatuses(st);
-    } catch (e) {
-      if (e instanceof Error && e.message === 'UNAUTHORIZED') {
-        await signOut();
-        router.replace('/login');
-        return;
-      }
-      setErr('טעינת הלידים נכשלה');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [signOut]);
-
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  async function onRefresh() {
+    setRefreshing(true);
+    await refresh();
+    setRefreshing(false);
+  }
 
   const customMap = useMemo(() => new Map(statuses.map((s) => [s.id, s])), [statuses]);
   const label = (st: string) => statusLabel[st] ?? customMap.get(st)?.label ?? st;
@@ -101,7 +82,8 @@ export default function Leads() {
     return [...builtinOrder, ...custom];
   }, [counts]);
 
-  if (loading) return <View style={s.center}><ActivityIndicator color={colors.primary} /></View>;
+  // ספינר רק אם המאגר עדיין ריק בטעינה הראשונה
+  if (!ready && leads.length === 0) return <View style={s.center}><ActivityIndicator color={colors.primary} /></View>;
 
   return (
     <View style={s.wrap}>
@@ -130,9 +112,9 @@ export default function Leads() {
         data={filtered}
         keyExtractor={(l) => l.id}
         contentContainerStyle={{ padding: 14, paddingTop: 6, gap: 10 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={colors.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         keyboardShouldPersistTaps="handled"
-        ListEmptyComponent={<Text style={s.empty}>{err || 'אין לידים תואמים.'}</Text>}
+        ListEmptyComponent={<Text style={s.empty}>אין לידים תואמים.</Text>}
         renderItem={({ item }) => (
           <Pressable style={[s.row, { borderRightColor: color(item.status) }]} onPress={() => router.push(`/lead/${item.id}`)}>
             <View style={{ flex: 1 }}>
@@ -148,8 +130,8 @@ export default function Leads() {
             </View>
             {item.phone ? (
               <View style={s.actions}>
-                <Pressable style={[s.actBtn, { backgroundColor: colors.wa }]} onPress={() => Linking.openURL(`https://wa.me/${item.phone!.replace(/\D/g, '')}`)}><Text style={s.actIcon}>W</Text></Pressable>
-                <Pressable style={[s.actBtn, { backgroundColor: colors.primary }]} onPress={() => Linking.openURL(`tel:${item.phone}`)}><Text style={s.actIcon}>☎</Text></Pressable>
+                <Pressable style={[s.actBtn, { backgroundColor: colors.wa }]} onPress={() => Linking.openURL(`https://wa.me/${item.phone!.replace(/\D/g, '')}`)}><FontAwesome name="whatsapp" size={18} color="#fff" /></Pressable>
+                <Pressable style={[s.actBtn, { backgroundColor: colors.primary }]} onPress={() => Linking.openURL(`tel:${item.phone}`)}><Feather name="phone" size={16} color="#fff" /></Pressable>
               </View>
             ) : null}
           </Pressable>
@@ -181,5 +163,4 @@ const s = StyleSheet.create({
   chipText: { fontSize: 12, fontWeight: '700' },
   actions: { flexDirection: 'row', gap: 6 },
   actBtn: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
-  actIcon: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });

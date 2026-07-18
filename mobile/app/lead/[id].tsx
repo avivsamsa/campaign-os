@@ -15,16 +15,13 @@ import { useLocalSearchParams } from 'expo-router';
 import {
   addNote,
   addReason,
-  getLeads,
   getNotes,
   getReasons,
-  getStatuses,
   updateLead,
-  type CustomStatus,
-  type Lead,
   type Note,
   type Reason,
 } from '../../lib/api';
+import { useData } from '../../lib/data';
 import { BUILTIN_STATUSES, colors, formatPhone, statusColor, statusLabel } from '../../lib/theme';
 
 const nf = new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 });
@@ -52,10 +49,13 @@ function noteText(n: Note): string {
 
 export default function LeadDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [lead, setLead] = useState<Lead | null>(null);
+  const { leads, statuses, ready, refresh } = useData();
+
+  // הליד עצמו מיידי מהמאגר; רק היומן נטען פר-ליד
+  const lead = leads.find((l) => l.id === id) ?? null;
+
   const [notes, setNotes] = useState<Note[]>([]);
-  const [statuses, setStatuses] = useState<CustomStatus[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [notesLoading, setNotesLoading] = useState(true);
   const [body, setBody] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -66,22 +66,21 @@ export default function LeadDetail() {
   const [loadingReasons, setLoadingReasons] = useState(false);
   const [newReason, setNewReason] = useState('');
 
-  const load = useCallback(async () => {
+  const reloadNotes = useCallback(async () => {
     try {
-      const [leads, ns, sts] = await Promise.all([
-        getLeads(),
-        getNotes(id).catch(() => []),
-        getStatuses().catch(() => []),
-      ]);
-      setLead(leads.find((l) => l.id === id) ?? null);
-      setNotes(ns);
-      setStatuses(sts);
+      setNotes(await getNotes(id));
+    } catch {
+      /* ignore */
     } finally {
-      setLoading(false);
+      setNotesLoading(false);
     }
   }, [id]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { reloadNotes(); }, [reloadNotes]);
+
+  async function afterChange() {
+    await Promise.all([refresh(), reloadNotes()]);
+  }
 
   async function changeStatus(st: string) {
     if (!lead) return;
@@ -104,7 +103,7 @@ export default function LeadDetail() {
     }
     try {
       await updateLead(id, { status: st });
-      load();
+      afterChange();
     } catch (e) {
       Alert.alert('שגיאה', e instanceof Error ? e.message : 'עדכון נכשל');
     }
@@ -115,7 +114,7 @@ export default function LeadDetail() {
     try {
       await updateLead(id, { status: 'closed', deal_value: amount });
       setAmountModal(false);
-      load();
+      afterChange();
     } catch (e) {
       Alert.alert('שגיאה', e instanceof Error ? e.message : 'עדכון נכשל');
     }
@@ -125,7 +124,7 @@ export default function LeadDetail() {
     try {
       await updateLead(id, { status: 'irrelevant', reason_id: rid });
       setReasonModal(false);
-      load();
+      afterChange();
     } catch (e) {
       Alert.alert('שגיאה', e instanceof Error ? e.message : 'עדכון נכשל');
     }
@@ -152,13 +151,16 @@ export default function LeadDetail() {
       const d = await addNote(id, text);
       setNotes((prev) => [d.note, ...prev]);
       setBody('');
+      refresh(); // עדכון מונה ההערות במאגר
     } finally {
       setSaving(false);
     }
   }
 
-  if (loading) return <View style={s.center}><ActivityIndicator color={colors.primary} /></View>;
-  if (!lead) return <View style={s.center}><Text style={{ color: colors.muted }}>הליד לא נמצא.</Text></View>;
+  if (!lead) {
+    if (!ready && leads.length === 0) return <View style={s.center}><ActivityIndicator color={colors.primary} /></View>;
+    return <View style={s.center}><Text style={{ color: colors.muted }}>הליד לא נמצא.</Text></View>;
+  }
 
   return (
     <ScrollView style={s.wrap} contentContainerStyle={{ padding: 16, gap: 16 }} keyboardShouldPersistTaps="handled">
@@ -212,7 +214,9 @@ export default function LeadDetail() {
         <Pressable style={[s.addBtn, (saving || !body.trim()) && { opacity: 0.5 }]} onPress={submitNote} disabled={saving || !body.trim()}>
           <Text style={s.addBtnText}>{saving ? 'שומר…' : 'הוסף הערה'}</Text>
         </Pressable>
-        {notes.length === 0 ? (
+        {notesLoading ? (
+          <ActivityIndicator color={colors.primary} style={{ marginTop: 8 }} />
+        ) : notes.length === 0 ? (
           <Text style={s.sub}>עדיין אין רשומות.</Text>
         ) : (
           notes.map((n) => (
