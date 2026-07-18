@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "AVIVSAMSA PPC",
+    "name": "AvivPPC",
     "slug": "campaign-os",
     "version": "1.0.0",
     "scheme": "campaignos",
@@ -19,7 +19,7 @@
       "icon": "./assets/icon-ios.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "CFBundleDisplayName": "AVIVSAMSA PPC"
+        "CFBundleDisplayName": "AvivPPC"
       }
     },
     "android": {
