@@ -33,6 +33,7 @@ export default function RootLayout() {
           <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="leads" options={{ title: 'הלידים שלך' }} />
           <Stack.Screen name="lead/[id]" options={{ title: 'פרטי ליד' }} />
+          <Stack.Screen name="settings" options={{ title: 'חשבון' }} />
         </Stack>
       </SafeAreaProvider>
     </AuthProvider>

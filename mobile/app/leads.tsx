@@ -83,8 +83,8 @@ export default function Leads() {
       <Stack.Screen
         options={{
           headerRight: () => (
-            <Pressable onPress={async () => { await signOut(); router.replace('/login'); }} hitSlop={10}>
-              <Text style={s.logout}>התנתקות</Text>
+            <Pressable onPress={() => router.push('/settings')} hitSlop={10}>
+              <Text style={s.logout}>חשבון</Text>
             </Pressable>
           ),
         }}

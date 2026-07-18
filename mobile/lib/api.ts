@@ -63,3 +63,5 @@ export const updateLead = (
   id: string,
   patch: { status?: string; deal_value?: number | null; reason_id?: string },
 ) => send(`/api/portal/leads/${id}`, 'PATCH', patch);
+export const deleteAccount = () =>
+  send<{ ok: boolean; demo?: boolean }>('/api/portal/account', 'DELETE');
