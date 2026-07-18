@@ -65,3 +65,9 @@ export const updateLead = (
 ) => send(`/api/portal/leads/${id}`, 'PATCH', patch);
 export const deleteAccount = () =>
   send<{ ok: boolean; demo?: boolean }>('/api/portal/account', 'DELETE');
+
+export type Reason = { id: string; label: string };
+export const getReasons = (category: string | null) =>
+  get<{ admin: Reason[]; client: Reason[] }>(`/api/portal/reasons?category=${category ?? ''}`);
+export const addReason = (label: string, category: string | null) =>
+  send<{ reason: Reason }>('/api/portal/reasons', 'POST', { label, category });
