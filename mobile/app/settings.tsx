@@ -64,14 +64,15 @@ export default function Settings() {
   );
 
   return (
-    <ScrollView style={s.wrap} contentContainerStyle={{ padding: 16, gap: 16 }}>
-      <View style={s.card}>
-        <Text style={s.label}>אזור עבודה</Text>
-        <Text style={s.value}>{clientName ?? 'הפורטל שלי'}</Text>
+    <ScrollView style={s.wrap} contentContainerStyle={s.content}>
+      {/* פרופיל הלקוח */}
+      <View style={s.profile}>
+        <View style={s.avatar}><Feather name="user" size={30} color={c.primary} /></View>
+        <Text style={s.name}>{clientName ?? 'הפורטל שלי'}</Text>
       </View>
 
-      {/* מראה — בהיר / כהה / אוטומטי */}
-      <View>
+      {/* מראה */}
+      <View style={s.block}>
         <Text style={s.sectionTitle}>מראה</Text>
         <View style={[s.segment, { flexDirection: rowDir }]}>
           {MODES.map((m) => {
@@ -87,7 +88,7 @@ export default function Settings() {
       </View>
 
       {/* מידע ומדיניות */}
-      <View>
+      <View style={s.block}>
         <Text style={s.sectionTitle}>מידע ומדיניות</Text>
         <View style={s.group}>
           <Link icon="shield" label="מדיניות פרטיות" onPress={() => Linking.openURL(`${API_BASE}/privacy`)} />
@@ -98,27 +99,28 @@ export default function Settings() {
         </View>
       </View>
 
-      <Pressable style={s.btn} onPress={logout}>
-        <Text style={s.btnText}>התנתקות</Text>
+      {/* דוחף את פעולות החשבון לתחתית */}
+      <View style={{ flex: 1, minHeight: 24 }} />
+
+      <Pressable style={s.logoutBtn} onPress={logout}>
+        <Text style={s.logoutText}>התנתקות</Text>
       </Pressable>
 
-      <Pressable style={[s.btn, s.dangerBtn]} onPress={confirmDelete}>
-        <Text style={[s.btnText, { color: c.danger }]}>מחיקת חשבון</Text>
+      <Pressable style={s.deleteLink} onPress={confirmDelete} hitSlop={8}>
+        <Text style={s.deleteText}>מחיקת חשבון</Text>
       </Pressable>
-
-      <Text style={s.note}>
-        מחיקת החשבון מסירה את הגישה שלך לפורטל בלבד. הלידים שייכים לסוכנות ונשמרים אצלה.
-      </Text>
     </ScrollView>
   );
 }
 
 const makeStyles = (c: Palette) => StyleSheet.create({
   wrap: { flex: 1, backgroundColor: c.bg },
-  card: { backgroundColor: c.surface, borderColor: c.border, borderWidth: 1, borderRadius: 14, padding: 16 },
-  label: { color: c.muted, fontSize: 13, textAlign: 'right' },
-  value: { color: c.text, fontSize: 18, fontWeight: '700', textAlign: 'right', marginTop: 4 },
-  sectionTitle: { color: c.muted, fontSize: 13, fontWeight: '700', textAlign: 'right', marginBottom: 8, marginHorizontal: 2 },
+  content: { padding: 16, gap: 18, flexGrow: 1, paddingBottom: 28 },
+  profile: { alignItems: 'center', gap: 12, paddingTop: 18, paddingBottom: 4 },
+  avatar: { width: 72, height: 72, borderRadius: 36, backgroundColor: c.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  name: { color: c.text, fontSize: 24, fontWeight: '800', textAlign: 'center' },
+  block: { gap: 8 },
+  sectionTitle: { color: c.muted, fontSize: 13, fontWeight: '700', textAlign: 'right', marginHorizontal: 2 },
   segment: { backgroundColor: c.surface, borderColor: c.border, borderWidth: 1, borderRadius: 14, padding: 4, gap: 4 },
   segBtn: { flex: 1, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', paddingVertical: 11, borderRadius: 10 },
   segBtnActive: { backgroundColor: c.primary },
@@ -128,8 +130,8 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   linkLeft: { alignItems: 'center', gap: 12 },
   linkText: { color: c.text, fontSize: 15.5, fontWeight: '600' },
   divider: { height: 1, backgroundColor: c.border, marginHorizontal: 16 },
-  btn: { backgroundColor: c.surface, borderColor: c.borderStrong, borderWidth: 1, borderRadius: 12, paddingVertical: 15, alignItems: 'center' },
-  btnText: { color: c.text, fontSize: 16, fontWeight: '600' },
-  dangerBtn: { borderColor: c.danger },
-  note: { color: c.muted2, fontSize: 13, textAlign: 'right', lineHeight: 20, marginTop: 4 },
+  logoutBtn: { backgroundColor: c.surface, borderColor: c.borderStrong, borderWidth: 1, borderRadius: 12, paddingVertical: 15, alignItems: 'center' },
+  logoutText: { color: c.text, fontSize: 16, fontWeight: '600' },
+  deleteLink: { alignItems: 'center', paddingVertical: 10, marginTop: 2 },
+  deleteText: { color: c.muted2, fontSize: 13, fontWeight: '500' },
 });

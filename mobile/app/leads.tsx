@@ -122,7 +122,7 @@ export default function Leads() {
         renderItem={({ item }) => (
           <Pressable style={[s.row, { flexDirection: rowDir, borderRightColor: color(item.status) }]} onPress={() => router.push(`/lead/${item.id}`)}>
             <View style={{ flex: 1 }}>
-              <Text style={s.name} numberOfLines={1}>{item.name ?? '—'}</Text>
+              <Text style={s.name} numberOfLines={1}>{item.name ?? '-'}</Text>
               <Text style={s.meta} numberOfLines={1}>
                 {item.phone ? formatPhone(item.phone) : ''}
                 {item.created_at ? ` · ${new Date(item.created_at).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' })}` : ''}

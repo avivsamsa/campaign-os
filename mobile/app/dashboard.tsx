@@ -28,7 +28,6 @@ export default function Dashboard() {
   const s = useMemo(() => makeStyles(c), [c]);
   const [refreshing, setRefreshing] = useState(false);
 
-  // כמה לידים חדשים ממתינים לטיפול (למבט-על) וכמה מהם עדיין לא נקראו (לבאדג')
   const newLeadCount = useMemo(() => leads.filter((l) => l.status === 'new').length, [leads]);
   const unreadLeadCount = useMemo(
     () => leads.filter((l) => l.status === 'new' && !readLeads.has(l.id)).length,
@@ -55,8 +54,13 @@ export default function Dashboard() {
       <Stack.Screen
         options={{
           title: clientName ?? dashboard?.client_name ?? 'הבית שלי',
-          // RTL: התראות בצד שמאל, חשבון בצד ימין
+          // חשבון בצד שמאל (אייקון משתמש), התראות בצד ימין
           headerLeft: () => (
+            <Pressable onPress={() => router.push('/settings')} hitSlop={12} accessibilityLabel="חשבון" style={s.iconBtn}>
+              <Feather name="user" size={22} color={c.text2} />
+            </Pressable>
+          ),
+          headerRight: () => (
             <Pressable onPress={() => router.push('/notifications')} hitSlop={12} accessibilityLabel="התראות" style={s.bellWrap}>
               <Feather name="bell" size={22} color={c.text2} />
               {newCount > 0 ? (
@@ -66,28 +70,21 @@ export default function Dashboard() {
               ) : null}
             </Pressable>
           ),
-          headerRight: () => (
-            <Pressable onPress={() => router.push('/settings')} hitSlop={12} accessibilityLabel="חשבון">
-              <Text style={s.headerText}>חשבון</Text>
-            </Pressable>
-          ),
         }}
       />
 
       <ScrollView
-        contentContainerStyle={{ padding: 20, paddingTop: 14 }}
+        contentContainerStyle={{ padding: 20, paddingTop: 18 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
         showsVerticalScrollIndicator={false}
       >
-        <FadeIn><Text style={s.kicker}>במבט-על</Text></FadeIn>
-
         <View style={s.grid}>
           {KPIS.map((k, i) => (
-            <FadeIn key={k.key} index={i} delay={40} style={s.cardWrap}>
+            <FadeIn key={k.key} index={i} style={s.cardWrap}>
               <View style={s.card}>
                 <View style={[s.cardTop, { flexDirection: rowDir }]}>
                   <Text style={s.cardLabel}>{k.label}</Text>
-                  <Feather name={k.icon} size={15} color={c.muted2} />
+                  <Feather name={k.icon} size={13} color={c.muted2} />
                 </View>
                 <Text style={[s.cardValue, num, k.accent && newLeadCount > 0 && { color: c.primary }]}>
                   {value(k.key, k.money)}
@@ -97,19 +94,18 @@ export default function Dashboard() {
           ))}
         </View>
 
-        <FadeIn delay={300}>
+        <FadeIn delay={240}>
           <PressableScale style={s.cta} onPress={() => router.push('/leads')} accessibilityLabel="כל הלידים">
-            <Feather name={chevron} size={20} color="#fff" />
             <Text style={s.ctaText}>כל הלידים</Text>
           </PressableScale>
         </FadeIn>
 
         {dashboard && dashboard.categories.length > 1 ? (
-          <View style={{ marginTop: 28 }}>
-            <FadeIn delay={360}><Text style={s.section}>הקטגוריות שלי</Text></FadeIn>
-            <View style={{ gap: 10, marginTop: 12 }}>
+          <View style={{ marginTop: 26 }}>
+            <FadeIn delay={300}><Text style={s.section}>קמפיינים פעילים</Text></FadeIn>
+            <View style={{ gap: 10, marginTop: 14 }}>
               {dashboard.categories.map((cat, i) => (
-                <FadeIn key={cat.key} index={i} delay={420}>
+                <FadeIn key={cat.key} index={i} delay={360}>
                   <PressableScale
                     style={[s.catRow, { flexDirection: rowDir }]}
                     onPress={() => router.push({ pathname: '/leads', params: { category: cat.key, name: cat.name } })}
@@ -135,20 +131,19 @@ export default function Dashboard() {
 const makeStyles = (c: Palette) => StyleSheet.create({
   wrap: { flex: 1, backgroundColor: c.bg },
   center: { flex: 1, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center' },
-  headerText: { color: c.muted, fontSize: 15, marginHorizontal: 8 },
-  bellWrap: { paddingHorizontal: 10, paddingVertical: 6, marginRight: 2 },
-  badge: { position: 'absolute', top: 0, right: 2, backgroundColor: c.primary, minWidth: 19, height: 19, borderRadius: 10, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, borderWidth: 2, borderColor: c.bg },
+  iconBtn: { paddingHorizontal: 8, paddingVertical: 4 },
+  bellWrap: { paddingHorizontal: 8, paddingVertical: 6 },
+  badge: { position: 'absolute', top: 0, right: 0, backgroundColor: c.primary, minWidth: 19, height: 19, borderRadius: 10, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, borderWidth: 2, borderColor: c.bg },
   badgeText: { color: '#fff', fontSize: 10.5, fontWeight: '800', lineHeight: 14, includeFontPadding: false, textAlign: 'center' },
-  kicker: { color: c.muted2, fontSize: 12.5, fontWeight: '700', letterSpacing: 1, textAlign: 'right', marginBottom: 14 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   cardWrap: { width: '47%', flexGrow: 1 },
-  card: { backgroundColor: c.surface, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 16, gap: 14, borderWidth: c.isDark ? 0 : 1, borderColor: c.border },
+  card: { backgroundColor: c.surface, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, gap: 8, borderWidth: c.isDark ? 0 : 1, borderColor: c.border },
   cardTop: { alignItems: 'center', justifyContent: 'space-between' },
-  cardLabel: { color: c.muted, fontSize: 13.5, fontWeight: '500' },
-  cardValue: { color: c.text, fontSize: 30, fontWeight: '800', textAlign: 'right', letterSpacing: -0.5 },
-  cta: { marginTop: 22, backgroundColor: c.primary, borderRadius: 16, height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  ctaText: { color: '#fff', fontSize: 16.5, fontWeight: '800' },
-  section: { color: c.text2, fontSize: 15, fontWeight: '700', textAlign: 'right' },
+  cardLabel: { color: c.muted, fontSize: 12.5, fontWeight: '500' },
+  cardValue: { color: c.text, fontSize: 23, fontWeight: '800', textAlign: 'right', letterSpacing: -0.4 },
+  cta: { marginTop: 18, backgroundColor: c.surface, borderRadius: 14, height: 50, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: c.border },
+  ctaText: { color: c.text2, fontSize: 15.5, fontWeight: '700' },
+  section: { color: c.text2, fontSize: 15, fontWeight: '700', textAlign: 'center' },
   catRow: { alignItems: 'center', justifyContent: 'space-between', backgroundColor: c.surface, borderRadius: 16, paddingHorizontal: 18, paddingVertical: 17, borderWidth: c.isDark ? 0 : 1, borderColor: c.border },
   catName: { color: c.text, fontSize: 16.5, fontWeight: '700' },
   catRight: { alignItems: 'center', gap: 8 },

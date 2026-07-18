@@ -109,7 +109,7 @@ export default function Notifications() {
                     <View style={{ flex: 1 }}>
                       <Text style={s.title} numberOfLines={2}>
                         <Text style={read ? s.titleRead : s.titleBold}>{item.lead.name || 'ליד חדש'}</Text>
-                        {' — ליד חדש ממתין לטיפול'}
+                        {' - ליד חדש ממתין לטיפול'}
                       </Text>
                       <Text style={s.meta} numberOfLines={1}>
                         {item.lead.category_name ? `${item.lead.category_name} · ` : ''}
