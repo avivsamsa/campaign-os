@@ -20,10 +20,6 @@
     }
   },
   "submit": {
-    "production": {
-      "ios": {
-        "//": "eas submit ישאל את הפרטים אינטראקטיבית אם לא ממולאים כאן (Apple ID, App Store Connect App ID, Team ID)."
-      }
-    }
+    "production": {}
   }
 }
