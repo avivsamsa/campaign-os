@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Animated, Easing, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { addReason, addStatus, getReasons, updateLead, type CustomStatus, type Reason } from '../lib/api';
 import { useColors } from '../lib/theme-context';
 import { BUILTIN_STATUSES, STATUS_COLOR_NAMES, STATUS_COLORS, customStatusHex, statusColor, statusLabel, type Palette } from '../lib/theme';
 
 /**
- * דף-תחתית לשינוי סטטוס ליד במקום (בלי להיכנס לפרטי הליד).
- * סטטוס רגיל → מחיל מיד; "רכישה" → קלט סכום; "לא רלוונטי" → בחירת סיבה.
+ * דף-תחתית לשינוי סטטוס ליד במקום. רקע דוהה + וילון מחליק (אנימציה מותאמת,
+ * לא animationType='slide' שמחליק גם את הרקע). עדכון אופטימי דרך onApplied.
  */
 export function StatusSheet({
   visible,
@@ -17,6 +17,7 @@ export function StatusSheet({
   customStatuses,
   onClose,
   onChanged,
+  onApplied,
 }: {
   visible: boolean;
   leadId: string | null;
@@ -25,6 +26,7 @@ export function StatusSheet({
   customStatuses: CustomStatus[];
   onClose: () => void;
   onChanged: () => void;
+  onApplied?: (leadId: string, status: string) => void;
 }) {
   const c = useColors();
   const s = useMemo(() => makeStyles(c), [c]);
@@ -36,33 +38,57 @@ export function StatusSheet({
   const [newReason, setNewReason] = useState('');
   const [newLabel, setNewLabel] = useState('');
   const [newColor, setNewColor] = useState<string>('blue');
+  const [render, setRender] = useState(false);
+  const a = useRef(new Animated.Value(0)).current;
+
+  // שומרים את פרטי הליד האחרונים כדי לשמר תוכן במהלך אנימציית הסגירה
+  const last = useRef<{ leadId: string | null; categoryId: string | null; currentStatus: string | null }>({
+    leadId: null, categoryId: null, currentStatus: null,
+  });
+  if (leadId) last.current = { leadId, categoryId, currentStatus };
+  const L = last.current;
 
   useEffect(() => {
-    if (visible) { setStep('list'); setAmountVal(''); setNewReason(''); setNewLabel(''); setNewColor('blue'); }
-  }, [visible, leadId]);
-
-  if (!leadId) return null;
-
-  async function apply(patch: Parameters<typeof updateLead>[1]) {
-    setBusy(true);
-    try {
-      await updateLead(leadId!, patch);
-      onChanged();
-      onClose();
-    } catch (e) {
-      Alert.alert('שגיאה', e instanceof Error ? e.message : 'עדכון נכשל');
-    } finally {
-      setBusy(false);
+    if (visible) {
+      setStep('list'); setAmountVal(''); setNewReason(''); setNewLabel(''); setNewColor('blue');
+      setRender(true);
+      Animated.timing(a, { toValue: 1, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+    } else if (render) {
+      Animated.timing(a, { toValue: 0, duration: 190, easing: Easing.in(Easing.cubic), useNativeDriver: true }).start(({ finished }) => {
+        if (finished) setRender(false);
+      });
     }
+  }, [visible]);
+
+  if (!render || !L.leadId) return null;
+
+  const backdropOpacity = a.interpolate({ inputRange: [0, 1], outputRange: [0, 0.55] });
+  const sheetY = a.interpolate({ inputRange: [0, 1], outputRange: [600, 0] });
+
+  // מחיל שינוי סטטוס: משוב אופטימי מיידי להורה + סגירה, והרשת ברקע
+  function apply(patch: Parameters<typeof updateLead>[1]) {
+    const st = String((patch as { status?: string }).status ?? '');
+    if (st && st === L.currentStatus) { onClose(); return; }
+    if (st) onApplied?.(L.leadId!, st);
+    onClose();
+    (async () => {
+      try {
+        await updateLead(L.leadId!, patch);
+        onChanged();
+      } catch (e) {
+        Alert.alert('שגיאה', e instanceof Error ? e.message : 'עדכון נכשל');
+        onChanged();
+      }
+    })();
   }
 
   async function pick(st: string) {
-    if (st === currentStatus) { onClose(); return; }
+    if (st === L.currentStatus) { onClose(); return; }
     if (st === 'closed') { setStep('amount'); return; }
     if (st === 'irrelevant') {
       setStep('reason');
       setLoadingReasons(true);
-      try { setReasons(await getReasons(categoryId)); }
+      try { setReasons(await getReasons(L.categoryId)); }
       catch { setReasons({ admin: [], client: [] }); }
       finally { setLoadingReasons(false); }
       return;
@@ -74,7 +100,7 @@ export function StatusSheet({
     const label = newReason.trim();
     if (!label) return;
     try {
-      const d = await addReason(label, categoryId);
+      const d = await addReason(label, L.categoryId);
       setNewReason('');
       apply({ status: 'irrelevant', reason_id: d.reason.id });
     } catch (e) {
@@ -88,20 +114,26 @@ export function StatusSheet({
     setBusy(true);
     try {
       const d = await addStatus(label, newColor);
-      await updateLead(leadId!, { status: d.status.id });
-      onChanged();
+      onApplied?.(L.leadId!, d.status.id);
       onClose();
+      await updateLead(L.leadId!, { status: d.status.id });
+      onChanged();
     } catch (e) {
       Alert.alert('שגיאה', e instanceof Error ? e.message : 'יצירת סטטוס נכשלה');
+      onChanged();
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={s.backdrop} onPress={onClose}>
-        <Pressable style={s.sheet} onPress={() => {}}>
+    <Modal visible={render} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
+      <View style={StyleSheet.absoluteFill}>
+        <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: '#000', opacity: backdropOpacity }]}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        </Animated.View>
+
+        <Animated.View style={[s.sheet, { transform: [{ translateY: sheetY }] }]}>
           <View style={s.handle} />
 
           {step === 'list' && (
@@ -109,7 +141,7 @@ export function StatusSheet({
               <Text style={s.title}>שינוי סטטוס</Text>
               <View style={s.wrap}>
                 {BUILTIN_STATUSES.map((st) => {
-                  const active = currentStatus === st;
+                  const active = L.currentStatus === st;
                   const col = statusColor[st] ?? c.primary;
                   return (
                     <Pressable key={st} onPress={() => pick(st)} style={[s.chip, { borderColor: col }, active && { backgroundColor: col + '33' }]}>
@@ -118,7 +150,7 @@ export function StatusSheet({
                   );
                 })}
                 {customStatuses.map((cs) => {
-                  const active = currentStatus === cs.id;
+                  const active = L.currentStatus === cs.id;
                   const col = customStatusHex(cs.color);
                   return (
                     <Pressable key={cs.id} onPress={() => pick(cs.id)} style={[s.chip, { borderColor: col }, active && { backgroundColor: col + '33' }]}>
@@ -160,8 +192,8 @@ export function StatusSheet({
               <TextInput style={s.input} value={amountVal} onChangeText={setAmountVal} placeholder="0" placeholderTextColor={c.muted} keyboardType="numeric" autoFocus />
               <View style={s.actions}>
                 <Pressable style={[s.btn, s.ghost]} onPress={() => setStep('list')}><Text style={s.ghostText}>חזרה</Text></Pressable>
-                <Pressable style={[s.btn, s.primary]} disabled={busy} onPress={() => apply({ status: 'closed', deal_value: amountVal ? Number(amountVal.replace(/[^\d.]/g, '')) : null })}>
-                  <Text style={s.primaryText}>{busy ? '...' : 'שמירה'}</Text>
+                <Pressable style={[s.btn, s.primary]} onPress={() => apply({ status: 'closed', deal_value: amountVal ? Number(amountVal.replace(/[^\d.]/g, '')) : null })}>
+                  <Text style={s.primaryText}>שמירה</Text>
                 </Pressable>
               </View>
             </>
@@ -190,15 +222,14 @@ export function StatusSheet({
               )}
             </>
           )}
-        </Pressable>
-      </Pressable>
+        </Animated.View>
+      </View>
     </Modal>
   );
 }
 
 const makeStyles = (c: Palette) => StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
-  sheet: { backgroundColor: c.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 34, gap: 14 },
+  sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: c.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 34, gap: 14 },
   handle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: c.borderStrong, marginBottom: 2 },
   title: { color: c.text, fontSize: 18, fontWeight: '800', textAlign: 'right' },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end' },

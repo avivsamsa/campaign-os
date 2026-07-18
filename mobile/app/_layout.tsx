@@ -21,12 +21,12 @@ import { NewLeadAlert } from '../components/NewLeadAlert';
 import { BrandSplash } from '../components/BrandSplash';
 import { ThemeProvider, useTheme } from '../lib/theme-context';
 
-// כפתור חזרה בצד ימין (RTL) — ה-native header לא מבצע מירור אוטומטי.
+// כפתור חזרה בצד שמאל, חץ פונה שמאלה.
 function HeaderBack() {
   const { colors } = useTheme();
   return (
     <Pressable onPress={() => router.back()} hitSlop={14} accessibilityLabel="חזרה" style={{ paddingHorizontal: 8, paddingVertical: 4 }}>
-      <Feather name="chevron-right" size={27} color={colors.text} />
+      <Feather name="chevron-left" size={27} color={colors.text} />
     </Pressable>
   );
 }
@@ -58,9 +58,9 @@ function ThemedApp() {
           headerTitleStyle: { color: colors.text },
           contentStyle: { backgroundColor: colors.bg },
           headerShadowVisible: false,
-          // RTL: כפתור החזרה בצד ימין במקום שמאל
+          // כפתור החזרה בצד שמאל
           headerBackVisible: false,
-          headerRight: () => <HeaderBack />,
+          headerLeft: () => <HeaderBack />,
           // החלקה לחזרה מכל רוחב המסך (כמו יציאה מצ'אט בוואטסאפ), מודע ל-RTL
           gestureEnabled: true,
           fullScreenGestureEnabled: true,

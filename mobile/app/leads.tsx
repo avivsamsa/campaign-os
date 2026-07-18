@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -33,6 +33,17 @@ export default function Leads() {
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
   const [statusFor, setStatusFor] = useState<Lead | null>(null);
+  const [optStatus, setOptStatus] = useState<Record<string, string>>({});
+
+  // ניקוי דריסות אופטימיות שכבר הסתנכרנו עם המאגר
+  useEffect(() => {
+    setOptStatus((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const l of leads) if (next[l.id] && l.status === next[l.id]) { delete next[l.id]; changed = true; }
+      return changed ? next : prev;
+    });
+  }, [leads]);
 
   async function onRefresh() {
     setRefreshing(true);
@@ -123,9 +134,11 @@ export default function Leads() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={<Text style={s.empty}>אין לידים תואמים.</Text>}
-        renderItem={({ item, index }) => (
+        renderItem={({ item, index }) => {
+          const st = optStatus[item.id] ?? item.status;
+          return (
           <FadeIn index={index < 9 ? index : undefined} delay={10}>
-            <Pressable style={[s.row, { flexDirection: rowDir, borderRightColor: color(item.status) }]} onPress={() => router.push(`/lead/${item.id}`)}>
+            <Pressable style={[s.row, { flexDirection: rowDir, borderRightColor: color(st) }]} onPress={() => router.push(`/lead/${item.id}`)}>
               <View style={{ flex: 1 }}>
                 <Text style={s.name} numberOfLines={1}>{item.name ?? '-'}</Text>
                 <Text style={s.meta} numberOfLines={1}>
@@ -135,8 +148,8 @@ export default function Leads() {
                 </Text>
               </View>
               <View style={[s.trailing, { flexDirection: rowDir }]}>
-                <Pressable style={[s.chip, { backgroundColor: color(item.status) + '33', borderColor: color(item.status) }]} onPress={() => setStatusFor(item)} hitSlop={6}>
-                  <Text style={[s.chipText, { color: color(item.status) }]}>{label(item.status)}</Text>
+                <Pressable style={[s.chip, { backgroundColor: color(st) + '33', borderColor: color(st) }]} onPress={() => setStatusFor({ ...item, status: st })} hitSlop={6}>
+                  <Text style={[s.chipText, { color: color(st) }]}>{label(st)}</Text>
                 </Pressable>
                 {item.phone ? (
                   <>
@@ -147,7 +160,8 @@ export default function Leads() {
               </View>
             </Pressable>
           </FadeIn>
-        )}
+          );
+        }}
       />
 
       <StatusSheet
@@ -158,6 +172,7 @@ export default function Leads() {
         customStatuses={statuses}
         onClose={() => setStatusFor(null)}
         onChanged={refresh}
+        onApplied={(lid, st) => setOptStatus((m) => ({ ...m, [lid]: st }))}
       />
     </View>
   );
