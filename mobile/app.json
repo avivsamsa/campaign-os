@@ -13,8 +13,13 @@
       "backgroundColor": "#0E0C0B"
     },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "il.co.avivsamsa.campaignos"
+      "supportsTablet": false,
+      "bundleIdentifier": "il.co.avivsamsa.campaignos",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleDisplayName": "Campaign OS"
+      }
     },
     "android": {
       "package": "il.co.avivsamsa.campaignos",
@@ -26,7 +31,13 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
