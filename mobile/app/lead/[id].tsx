@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -22,18 +22,19 @@ import {
   type Reason,
 } from '../../lib/api';
 import { useData } from '../../lib/data';
-import { BUILTIN_STATUSES, colors, formatPhone, statusColor, statusLabel } from '../../lib/theme';
+import { useColors } from '../../lib/theme-context';
+import { BUILTIN_STATUSES, formatPhone, statusColor, statusLabel, type Palette } from '../../lib/theme';
 
 const nf = new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 });
 const dt = (iso: string) =>
   new Date(iso).toLocaleString('he-IL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 
-function kindColor(k?: string): string {
+function kindColor(k: string | undefined, c: Palette): string {
   switch (k) {
     case 'status': return '#3b82f6';
     case 'purchase': return '#16a34a';
     case 'irrelevant': return '#ef4444';
-    default: return colors.primary;
+    default: return c.primary;
   }
 }
 
@@ -50,8 +51,9 @@ function noteText(n: Note): string {
 export default function LeadDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { leads, statuses, ready, refresh } = useData();
+  const c = useColors();
+  const s = useMemo(() => makeStyles(c), [c]);
 
-  // הליד עצמו מיידי מהמאגר; רק היומן נטען פר-ליד
   const lead = leads.find((l) => l.id === id) ?? null;
 
   const [notes, setNotes] = useState<Note[]>([]);
@@ -151,15 +153,15 @@ export default function LeadDetail() {
       const d = await addNote(id, text);
       setNotes((prev) => [d.note, ...prev]);
       setBody('');
-      refresh(); // עדכון מונה ההערות במאגר
+      refresh();
     } finally {
       setSaving(false);
     }
   }
 
   if (!lead) {
-    if (!ready && leads.length === 0) return <View style={s.center}><ActivityIndicator color={colors.primary} /></View>;
-    return <View style={s.center}><Text style={{ color: colors.muted }}>הליד לא נמצא.</Text></View>;
+    if (!ready && leads.length === 0) return <View style={s.center}><ActivityIndicator color={c.primary} /></View>;
+    return <View style={s.center}><Text style={{ color: c.muted }}>הליד לא נמצא.</Text></View>;
   }
 
   return (
@@ -173,10 +175,10 @@ export default function LeadDetail() {
         <View style={s.phoneRow}>
           <Text style={s.phone}>{formatPhone(lead.phone)}</Text>
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Pressable style={[s.pill, { backgroundColor: colors.wa }]} onPress={() => Linking.openURL(`https://wa.me/${lead.phone!.replace(/\D/g, '')}`)}>
+            <Pressable style={[s.pill, { backgroundColor: c.wa }]} onPress={() => Linking.openURL(`https://wa.me/${lead.phone!.replace(/\D/g, '')}`)}>
               <Text style={s.pillText}>וואטסאפ</Text>
             </Pressable>
-            <Pressable style={[s.pill, { backgroundColor: colors.primary }]} onPress={() => Linking.openURL(`tel:${lead.phone}`)}>
+            <Pressable style={[s.pill, { backgroundColor: c.primary }]} onPress={() => Linking.openURL(`tel:${lead.phone}`)}>
               <Text style={s.pillText}>חיוג</Text>
             </Pressable>
           </View>
@@ -188,18 +190,18 @@ export default function LeadDetail() {
         <View style={s.statusWrap}>
           {BUILTIN_STATUSES.map((st) => {
             const active = lead.status === st;
-            const c = statusColor[st] ?? colors.primary;
+            const col = statusColor[st] ?? c.primary;
             return (
-              <Pressable key={st} onPress={() => changeStatus(st)} style={[s.statusChip, { borderColor: c }, active && { backgroundColor: c + '33' }]}>
-                <Text style={[s.statusChipText, { color: active ? c : colors.text2 }]}>{statusLabel[st]}</Text>
+              <Pressable key={st} onPress={() => changeStatus(st)} style={[s.statusChip, { borderColor: col }, active && { backgroundColor: col + '33' }]}>
+                <Text style={[s.statusChipText, { color: active ? col : c.text2 }]}>{statusLabel[st]}</Text>
               </Pressable>
             );
           })}
           {statuses.map((cs) => {
             const active = lead.status === cs.id;
             return (
-              <Pressable key={cs.id} onPress={() => changeStatus(cs.id)} style={[s.statusChip, { borderColor: colors.primary }, active && { backgroundColor: colors.primarySoft }]}>
-                <Text style={[s.statusChipText, { color: active ? colors.primary : colors.text2 }]}>{cs.label}</Text>
+              <Pressable key={cs.id} onPress={() => changeStatus(cs.id)} style={[s.statusChip, { borderColor: c.primary }, active && { backgroundColor: c.primarySoft }]}>
+                <Text style={[s.statusChipText, { color: active ? c.primary : c.text2 }]}>{cs.label}</Text>
               </Pressable>
             );
           })}
@@ -210,17 +212,17 @@ export default function LeadDetail() {
 
       <View style={{ gap: 10 }}>
         <Text style={s.label}>יומן הליד</Text>
-        <TextInput style={s.noteInput} value={body} onChangeText={setBody} placeholder="מה קרה בשיחה?" placeholderTextColor={colors.muted} multiline />
+        <TextInput style={s.noteInput} value={body} onChangeText={setBody} placeholder="מה קרה בשיחה?" placeholderTextColor={c.muted} multiline />
         <Pressable style={[s.addBtn, (saving || !body.trim()) && { opacity: 0.5 }]} onPress={submitNote} disabled={saving || !body.trim()}>
           <Text style={s.addBtnText}>{saving ? 'שומר…' : 'הוסף הערה'}</Text>
         </Pressable>
         {notesLoading ? (
-          <ActivityIndicator color={colors.primary} style={{ marginTop: 8 }} />
+          <ActivityIndicator color={c.primary} style={{ marginTop: 8 }} />
         ) : notes.length === 0 ? (
           <Text style={s.sub}>עדיין אין רשומות.</Text>
         ) : (
           notes.map((n) => (
-            <View key={n.id} style={[s.noteItem, { borderRightWidth: 3, borderRightColor: kindColor(n.kind) }]}>
+            <View key={n.id} style={[s.noteItem, { borderRightWidth: 3, borderRightColor: kindColor(n.kind, c) }]}>
               <Text style={s.noteTime}>{dt(n.created_at)}</Text>
               <Text style={s.noteBody}>{noteText(n)}</Text>
             </View>
@@ -228,12 +230,11 @@ export default function LeadDetail() {
         )}
       </View>
 
-      {/* פופאפ סכום רכישה */}
       <Modal visible={amountModal} transparent animationType="fade" onRequestClose={() => setAmountModal(false)}>
         <Pressable style={s.backdrop} onPress={() => setAmountModal(false)}>
           <Pressable style={s.modal} onPress={() => {}}>
             <Text style={s.modalTitle}>סכום הרכישה</Text>
-            <TextInput style={s.modalInput} value={amountVal} onChangeText={setAmountVal} placeholder="0" placeholderTextColor={colors.muted} keyboardType="numeric" autoFocus />
+            <TextInput style={s.modalInput} value={amountVal} onChangeText={setAmountVal} placeholder="0" placeholderTextColor={c.muted} keyboardType="numeric" autoFocus />
             <View style={s.modalActions}>
               <Pressable style={[s.mBtn, s.mBtnGhost]} onPress={() => setAmountModal(false)}><Text style={s.mBtnGhostText}>ביטול</Text></Pressable>
               <Pressable style={[s.mBtn, s.mBtnPrimary]} onPress={confirmAmount}><Text style={s.mBtnPrimaryText}>שמירה</Text></Pressable>
@@ -242,13 +243,12 @@ export default function LeadDetail() {
         </Pressable>
       </Modal>
 
-      {/* פופאפ סיבת לא רלוונטי */}
       <Modal visible={reasonModal} transparent animationType="fade" onRequestClose={() => setReasonModal(false)}>
         <Pressable style={s.backdrop} onPress={() => setReasonModal(false)}>
           <Pressable style={s.modal} onPress={() => {}}>
             <Text style={s.modalTitle}>למה לא רלוונטי?</Text>
             {loadingReasons ? (
-              <ActivityIndicator color={colors.primary} />
+              <ActivityIndicator color={c.primary} />
             ) : (
               <>
                 <View style={s.reasonWrap}>
@@ -259,7 +259,7 @@ export default function LeadDetail() {
                   ))}
                 </View>
                 <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
-                  <TextInput style={[s.modalInput, { flex: 1 }]} value={newReason} onChangeText={setNewReason} placeholder="סיבה חדשה…" placeholderTextColor={colors.muted} />
+                  <TextInput style={[s.modalInput, { flex: 1 }]} value={newReason} onChangeText={setNewReason} placeholder="סיבה חדשה…" placeholderTextColor={c.muted} />
                   <Pressable style={[s.mBtn, s.mBtnPrimary, !newReason.trim() && { opacity: 0.5 }]} onPress={addOtherReason} disabled={!newReason.trim()}>
                     <Text style={s.mBtnPrimaryText}>הוסף</Text>
                   </Pressable>
@@ -274,37 +274,37 @@ export default function LeadDetail() {
   );
 }
 
-const s = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: colors.bg },
-  center: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
-  name: { color: colors.text, fontSize: 22, fontWeight: '800', textAlign: 'right' },
-  sub: { color: colors.muted, fontSize: 13, textAlign: 'right', marginTop: 2 },
-  label: { color: colors.muted, fontSize: 13, fontWeight: '700', textAlign: 'right', marginBottom: 8 },
-  phoneRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 14, padding: 12 },
-  phone: { color: colors.text, fontSize: 17, fontWeight: '600' },
+const makeStyles = (c: Palette) => StyleSheet.create({
+  wrap: { flex: 1, backgroundColor: c.bg },
+  center: { flex: 1, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center' },
+  name: { color: c.text, fontSize: 22, fontWeight: '800', textAlign: 'right' },
+  sub: { color: c.muted, fontSize: 13, textAlign: 'right', marginTop: 2 },
+  label: { color: c.muted, fontSize: 13, fontWeight: '700', textAlign: 'right', marginBottom: 8 },
+  phoneRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: c.surface, borderColor: c.border, borderWidth: 1, borderRadius: 14, padding: 12 },
+  phone: { color: c.text, fontSize: 17, fontWeight: '600' },
   pill: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999 },
   pillText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   statusWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   statusChip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 },
   statusChipText: { fontSize: 13, fontWeight: '600' },
-  deal: { color: colors.ok, fontWeight: '700', textAlign: 'right', marginTop: 8 },
-  noteInput: { backgroundColor: colors.surface, borderColor: colors.borderStrong, borderWidth: 1, borderRadius: 12, padding: 12, color: colors.text, fontSize: 15, minHeight: 60, textAlign: 'right', textAlignVertical: 'top' },
-  addBtn: { backgroundColor: colors.primary, borderRadius: 999, paddingVertical: 13, alignItems: 'center' },
+  deal: { color: c.ok, fontWeight: '700', textAlign: 'right', marginTop: 8 },
+  noteInput: { backgroundColor: c.surface, borderColor: c.borderStrong, borderWidth: 1, borderRadius: 12, padding: 12, color: c.text, fontSize: 15, minHeight: 60, textAlign: 'right', textAlignVertical: 'top' },
+  addBtn: { backgroundColor: c.primary, borderRadius: 999, paddingVertical: 13, alignItems: 'center' },
   addBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-  noteItem: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 12, padding: 12 },
-  noteTime: { color: colors.muted2, fontSize: 12, textAlign: 'right' },
-  noteBody: { color: colors.text, fontSize: 15, textAlign: 'right', marginTop: 4 },
+  noteItem: { backgroundColor: c.surface, borderColor: c.border, borderWidth: 1, borderRadius: 12, padding: 12 },
+  noteTime: { color: c.muted2, fontSize: 12, textAlign: 'right' },
+  noteBody: { color: c.text, fontSize: 15, textAlign: 'right', marginTop: 4 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 },
-  modal: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 18, padding: 18, gap: 12 },
-  modalTitle: { color: colors.text, fontSize: 18, fontWeight: '800', textAlign: 'right' },
-  modalInput: { backgroundColor: colors.surface2, borderColor: colors.borderStrong, borderWidth: 1, borderRadius: 12, padding: 12, color: colors.text, fontSize: 16, textAlign: 'right' },
+  modal: { backgroundColor: c.surface, borderColor: c.border, borderWidth: 1, borderRadius: 18, padding: 18, gap: 12 },
+  modalTitle: { color: c.text, fontSize: 18, fontWeight: '800', textAlign: 'right' },
+  modalInput: { backgroundColor: c.surface2, borderColor: c.borderStrong, borderWidth: 1, borderRadius: 12, padding: 12, color: c.text, fontSize: 16, textAlign: 'right' },
   modalActions: { flexDirection: 'row', gap: 8 },
   mBtn: { borderRadius: 999, paddingVertical: 12, paddingHorizontal: 16, alignItems: 'center', flex: 1 },
-  mBtnPrimary: { backgroundColor: colors.primary, flex: 0, paddingHorizontal: 20 },
+  mBtnPrimary: { backgroundColor: c.primary, flex: 0, paddingHorizontal: 20 },
   mBtnPrimaryText: { color: '#fff', fontWeight: '700' },
-  mBtnGhost: { borderColor: colors.borderStrong, borderWidth: 1 },
-  mBtnGhostText: { color: colors.text2, fontWeight: '600' },
+  mBtnGhost: { borderColor: c.borderStrong, borderWidth: 1 },
+  mBtnGhostText: { color: c.text2, fontWeight: '600' },
   reasonWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  reasonChip: { backgroundColor: colors.surface2, borderColor: colors.borderStrong, borderWidth: 1, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 10 },
-  reasonChipText: { color: colors.text, fontSize: 14, fontWeight: '500' },
+  reasonChip: { backgroundColor: c.surface2, borderColor: c.borderStrong, borderWidth: 1, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 10 },
+  reasonChipText: { color: c.text, fontSize: 14, fontWeight: '500' },
 });

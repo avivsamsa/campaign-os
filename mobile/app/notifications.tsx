@@ -3,7 +3,8 @@ import { FlatList, I18nManager, Pressable, RefreshControl, StyleSheet, Text, Vie
 import { Stack, router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useData } from '../lib/data';
-import { colors } from '../lib/theme';
+import { useColors } from '../lib/theme-context';
+import type { Palette } from '../lib/theme';
 import { FadeIn } from '../lib/anim';
 
 const rowDir = I18nManager.isRTL ? 'row' : 'row-reverse';
@@ -28,6 +29,8 @@ function initials(name: string | null): string {
 
 export default function Notifications() {
   const { leads, ready, refresh } = useData();
+  const c = useColors();
+  const s = useMemo(() => makeStyles(c), [c]);
   const [refreshing, setRefreshing] = useState(false);
 
   const newLeads = useMemo(
@@ -48,12 +51,12 @@ export default function Notifications() {
         data={newLeads}
         keyExtractor={(l) => l.id}
         contentContainerStyle={{ paddingBottom: 24 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
         ListHeaderComponent={newLeads.length ? <Text style={s.sectionHead}>חדש</Text> : null}
         ListEmptyComponent={
           !ready ? null : (
             <View style={s.empty}>
-              <View style={s.emptyIcon}><Feather name="bell" size={26} color={colors.muted} /></View>
+              <View style={s.emptyIcon}><Feather name="bell" size={26} color={c.muted} /></View>
               <Text style={s.emptyText}>אין התראות חדשות</Text>
               <Text style={s.emptySub}>כאן יופיעו לידים חדשים ברגע שייכנסו</Text>
             </View>
@@ -90,21 +93,21 @@ export default function Notifications() {
   );
 }
 
-const s = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: colors.bg },
-  sectionHead: { color: colors.text, fontSize: 20, fontWeight: '800', textAlign: 'right', paddingHorizontal: 18, paddingTop: 14, paddingBottom: 6 },
-  row: { alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 13, backgroundColor: 'rgba(168,50,90,0.06)' },
-  rowPressed: { backgroundColor: colors.surface2 },
+const makeStyles = (c: Palette) => StyleSheet.create({
+  wrap: { flex: 1, backgroundColor: c.bg },
+  sectionHead: { color: c.text, fontSize: 20, fontWeight: '800', textAlign: 'right', paddingHorizontal: 18, paddingTop: 14, paddingBottom: 6 },
+  row: { alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 13, backgroundColor: c.primarySoft },
+  rowPressed: { backgroundColor: c.surface2 },
   avatarWrap: { width: 54, height: 54 },
-  avatar: { width: 54, height: 54, borderRadius: 27, backgroundColor: colors.surface2, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
-  avatarTxt: { color: colors.text2, fontSize: 19, fontWeight: '800' },
-  avatarBadge: { position: 'absolute', bottom: -1, left: -1, width: 22, height: 22, borderRadius: 11, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.bg },
-  title: { color: colors.text2, fontSize: 15, textAlign: 'right', lineHeight: 21 },
-  titleBold: { color: colors.text, fontWeight: '800' },
-  meta: { color: colors.muted, fontSize: 13, textAlign: 'right', marginTop: 3 },
-  unreadDot: { width: 11, height: 11, borderRadius: 6, backgroundColor: colors.primary },
+  avatar: { width: 54, height: 54, borderRadius: 27, backgroundColor: c.surface2, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: c.border },
+  avatarTxt: { color: c.text2, fontSize: 19, fontWeight: '800' },
+  avatarBadge: { position: 'absolute', bottom: -1, left: -1, width: 22, height: 22, borderRadius: 11, backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: c.bg },
+  title: { color: c.text2, fontSize: 15, textAlign: 'right', lineHeight: 21 },
+  titleBold: { color: c.text, fontWeight: '800' },
+  meta: { color: c.muted, fontSize: 13, textAlign: 'right', marginTop: 3 },
+  unreadDot: { width: 11, height: 11, borderRadius: 6, backgroundColor: c.primary },
   empty: { alignItems: 'center', paddingTop: 90, gap: 8 },
-  emptyIcon: { width: 68, height: 68, borderRadius: 34, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
-  emptyText: { color: colors.text2, fontSize: 16, fontWeight: '700' },
-  emptySub: { color: colors.muted2, fontSize: 13.5 },
+  emptyIcon: { width: 68, height: 68, borderRadius: 34, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
+  emptyText: { color: c.text2, fontSize: 16, fontWeight: '700' },
+  emptySub: { color: c.muted2, fontSize: 13.5 },
 });

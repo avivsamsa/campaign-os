@@ -1,5 +1,24 @@
-// פלטת המותג (AVIV SAMSA Soft Engine) — מצב כהה כברירת מחדל.
-export const colors = {
+// פלטת המותג (AVIV SAMSA Soft Engine) — כהה + בהיר.
+export type Palette = {
+  bg: string;
+  surface: string;
+  surface2: string;
+  border: string;
+  borderStrong: string;
+  text: string;
+  text2: string;
+  muted: string;
+  muted2: string;
+  primary: string;
+  primarySoft: string;
+  ok: string;
+  danger: string;
+  wa: string;
+  white: string;
+  isDark: boolean;
+};
+
+export const darkColors: Palette = {
   bg: '#0E0C0B',
   surface: '#1A1613',
   surface2: '#241E1A',
@@ -15,8 +34,32 @@ export const colors = {
   danger: '#D9534F',
   wa: '#25D366',
   white: '#ffffff',
+  isDark: true,
 };
 
+export const lightColors: Palette = {
+  bg: '#FBF8F5',
+  surface: '#FFFFFF',
+  surface2: '#F3EDE7',
+  border: '#E7DED6',
+  borderStrong: '#D6C9BE',
+  text: '#241E1A',
+  text2: '#4A3F38',
+  muted: '#6E635C',
+  muted2: '#938880',
+  primary: '#A8325A',
+  primarySoft: 'rgba(168,50,90,0.12)',
+  ok: '#2E8B4F',
+  danger: '#C7443F',
+  wa: '#1FB457',
+  white: '#ffffff',
+  isDark: false,
+};
+
+// ברירת-מחדל (כהה) — לשימוש בקבצים לא-ריאקטיביים בלבד.
+export const colors = darkColors;
+
+// צבעי סטטוס — סמנטיים, זהים בשני המצבים.
 export const statusColor: Record<string, string> = {
   new: '#3b82f6',
   no_answer_1: '#f59e0b',

@@ -15,7 +15,8 @@ import {
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Feather, FontAwesome } from '@expo/vector-icons';
 import { useData } from '../lib/data';
-import { colors, formatPhone, statusColor, statusLabel } from '../lib/theme';
+import { useColors } from '../lib/theme-context';
+import { statusColor, statusLabel, formatPhone, type Palette } from '../lib/theme';
 
 const nf = new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 });
 const rowDir = I18nManager.isRTL ? 'row' : 'row-reverse';
@@ -23,6 +24,8 @@ const rowDir = I18nManager.isRTL ? 'row' : 'row-reverse';
 export default function Leads() {
   const { leads, statuses, ready, refresh } = useData();
   const { category, name } = useLocalSearchParams<{ category?: string; name?: string }>();
+  const c = useColors();
+  const s = useMemo(() => makeStyles(c), [c]);
   const [refreshing, setRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
@@ -33,9 +36,9 @@ export default function Leads() {
     setRefreshing(false);
   }
 
-  const customMap = useMemo(() => new Map(statuses.map((s) => [s.id, s])), [statuses]);
+  const customMap = useMemo(() => new Map(statuses.map((st) => [st.id, st])), [statuses]);
   const label = (st: string) => statusLabel[st] ?? customMap.get(st)?.label ?? st;
-  const color = (st: string) => statusColor[st] ?? colors.primary;
+  const color = (st: string) => statusColor[st] ?? c.primary;
 
   const categoryLeads = useMemo(() => {
     if (!category) return leads;
@@ -55,9 +58,9 @@ export default function Leads() {
   }, [categoryLeads, search]);
 
   const counts = useMemo(() => {
-    const c: Record<string, number> = {};
-    for (const l of searchFiltered) c[l.status] = (c[l.status] ?? 0) + 1;
-    return c;
+    const cnt: Record<string, number> = {};
+    for (const l of searchFiltered) cnt[l.status] = (cnt[l.status] ?? 0) + 1;
+    return cnt;
   }, [searchFiltered]);
 
   const filtered = useMemo(
@@ -84,8 +87,7 @@ export default function Leads() {
     return [...builtinOrder, ...custom];
   }, [counts]);
 
-  // ספינר רק אם המאגר עדיין ריק בטעינה הראשונה
-  if (!ready && leads.length === 0) return <View style={s.center}><ActivityIndicator color={colors.primary} /></View>;
+  if (!ready && leads.length === 0) return <View style={s.center}><ActivityIndicator color={c.primary} /></View>;
 
   return (
     <View style={s.wrap}>
@@ -97,10 +99,10 @@ export default function Leads() {
           <View style={s.stat}><Text style={s.statNum}>{nf.format(summary.closed)}</Text><Text style={s.statLbl}>נסגרו</Text></View>
           <View style={[s.stat, s.statFeature]}><Text style={s.statNum}>₪{nf.format(summary.revenue)}</Text><Text style={s.statLbl}>מכירות</Text></View>
         </View>
-        <TextInput style={s.searchInput} value={search} onChangeText={setSearch} placeholder="חיפוש שם או טלפון…" placeholderTextColor={colors.muted} returnKeyType="search" />
+        <TextInput style={s.searchInput} value={search} onChangeText={setSearch} placeholder="חיפוש שם או טלפון…" placeholderTextColor={c.muted} returnKeyType="search" />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chipsRow}>
           <Pressable onPress={() => setStatusFilter('')} style={[s.filterChip, statusFilter === '' && s.filterChipActive]}>
-            <Text style={[s.filterChipText, statusFilter === '' && { color: colors.primary }]}>הכל {summary.total}</Text>
+            <Text style={[s.filterChipText, statusFilter === '' && { color: c.primary }]}>הכל {summary.total}</Text>
           </Pressable>
           {chipStatuses.map((st) => (
             <Pressable key={st} onPress={() => setStatusFilter(statusFilter === st ? '' : st)} style={[s.filterChip, { borderColor: color(st) }, statusFilter === st && { backgroundColor: color(st) + '33' }]}>
@@ -114,12 +116,11 @@ export default function Leads() {
         data={filtered}
         keyExtractor={(l) => l.id}
         contentContainerStyle={{ padding: 14, paddingTop: 6, gap: 10 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={<Text style={s.empty}>אין לידים תואמים.</Text>}
         renderItem={({ item }) => (
           <Pressable style={[s.row, { flexDirection: rowDir, borderRightColor: color(item.status) }]} onPress={() => router.push(`/lead/${item.id}`)}>
-            {/* ימין: שם + טלפון/תאריך */}
             <View style={{ flex: 1 }}>
               <Text style={s.name} numberOfLines={1}>{item.name ?? '—'}</Text>
               <Text style={s.meta} numberOfLines={1}>
@@ -128,15 +129,14 @@ export default function Leads() {
                 {item.notes_count > 0 ? ` · ${item.notes_count} הערות` : ''}
               </Text>
             </View>
-            {/* שמאל: סטטוס + כפתורים מקובצים */}
             <View style={[s.trailing, { flexDirection: rowDir }]}>
               <View style={[s.chip, { backgroundColor: color(item.status) + '33', borderColor: color(item.status) }]}>
                 <Text style={[s.chipText, { color: color(item.status) }]}>{label(item.status)}</Text>
               </View>
               {item.phone ? (
                 <>
-                  <Pressable style={[s.actBtn, { backgroundColor: colors.wa }]} onPress={() => Linking.openURL(`https://wa.me/${item.phone!.replace(/\D/g, '')}`)}><FontAwesome name="whatsapp" size={18} color="#fff" /></Pressable>
-                  <Pressable style={[s.actBtn, { backgroundColor: colors.primary }]} onPress={() => Linking.openURL(`tel:${item.phone}`)}><Feather name="phone" size={16} color="#fff" /></Pressable>
+                  <Pressable style={[s.actBtn, { backgroundColor: c.wa }]} onPress={() => Linking.openURL(`https://wa.me/${item.phone!.replace(/\D/g, '')}`)}><FontAwesome name="whatsapp" size={18} color="#fff" /></Pressable>
+                  <Pressable style={[s.actBtn, { backgroundColor: c.primary }]} onPress={() => Linking.openURL(`tel:${item.phone}`)}><Feather name="phone" size={16} color="#fff" /></Pressable>
                 </>
               ) : null}
             </View>
@@ -147,24 +147,24 @@ export default function Leads() {
   );
 }
 
-const s = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: colors.bg },
-  center: { flex: 1, backgroundColor: colors.bg, justifyContent: 'center', alignItems: 'center' },
-  header: { paddingHorizontal: 14, paddingTop: 10, gap: 10, borderBottomColor: colors.border, borderBottomWidth: 1, paddingBottom: 10 },
+const makeStyles = (c: Palette) => StyleSheet.create({
+  wrap: { flex: 1, backgroundColor: c.bg },
+  center: { flex: 1, backgroundColor: c.bg, justifyContent: 'center', alignItems: 'center' },
+  header: { paddingHorizontal: 14, paddingTop: 10, gap: 10, borderBottomColor: c.border, borderBottomWidth: 1, paddingBottom: 10 },
   stats: { flexDirection: 'row', gap: 8 },
-  stat: { flex: 1, backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 14, padding: 12, alignItems: 'center' },
-  statFeature: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
-  statNum: { color: colors.text, fontSize: 18, fontWeight: '800' },
-  statLbl: { color: colors.muted, fontSize: 12, marginTop: 2 },
-  searchInput: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, color: colors.text, fontSize: 15, textAlign: 'right' },
+  stat: { flex: 1, backgroundColor: c.surface, borderColor: c.border, borderWidth: 1, borderRadius: 14, padding: 12, alignItems: 'center' },
+  statFeature: { backgroundColor: c.primarySoft, borderColor: c.primary },
+  statNum: { color: c.text, fontSize: 18, fontWeight: '800' },
+  statLbl: { color: c.muted, fontSize: 12, marginTop: 2 },
+  searchInput: { backgroundColor: c.surface, borderColor: c.border, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, color: c.text, fontSize: 15, textAlign: 'right' },
   chipsRow: { gap: 8, paddingVertical: 2 },
-  filterChip: { borderColor: colors.borderStrong, borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
-  filterChipActive: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
-  filterChipText: { color: colors.text2, fontSize: 13, fontWeight: '600' },
-  empty: { color: colors.muted, textAlign: 'center', marginTop: 40 },
-  row: { alignItems: 'center', gap: 10, backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRightWidth: 4, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 12 },
-  name: { color: colors.text, fontSize: 16, fontWeight: '700', textAlign: 'right' },
-  meta: { color: colors.muted, fontSize: 13, textAlign: 'right', marginTop: 2 },
+  filterChip: { borderColor: c.borderStrong, borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
+  filterChipActive: { backgroundColor: c.primarySoft, borderColor: c.primary },
+  filterChipText: { color: c.text2, fontSize: 13, fontWeight: '600' },
+  empty: { color: c.muted, textAlign: 'center', marginTop: 40 },
+  row: { alignItems: 'center', gap: 10, backgroundColor: c.surface, borderColor: c.border, borderWidth: 1, borderRightWidth: 4, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 12 },
+  name: { color: c.text, fontSize: 16, fontWeight: '700', textAlign: 'right' },
+  meta: { color: c.muted, fontSize: 13, textAlign: 'right', marginTop: 2 },
   trailing: { alignItems: 'center', gap: 8 },
   chip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, borderWidth: 1 },
   chipText: { fontSize: 12, fontWeight: '700' },
