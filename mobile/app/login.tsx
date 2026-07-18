@@ -56,7 +56,7 @@ export default function Login() {
         >
           <FadeIn style={s.hero} offset={18}>
             <Image source={require('../assets/icon.png')} style={s.logo} />
-            <Text style={s.brand}>Campaign OS</Text>
+            <Text style={s.brand}>AVIVSAMSA PPC</Text>
             <Text style={s.tagline}>הפורטל שלך - לידים בזמן אמת</Text>
           </FadeIn>
 
