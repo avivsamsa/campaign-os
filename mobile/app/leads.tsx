@@ -16,7 +16,10 @@ import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Feather, FontAwesome } from '@expo/vector-icons';
 import { useData } from '../lib/data';
 import { useColors } from '../lib/theme-context';
-import { statusColor, statusLabel, formatPhone, type Palette } from '../lib/theme';
+import { statusColor, statusLabel, formatPhone, customStatusHex, type Palette } from '../lib/theme';
+import { FadeIn } from '../lib/anim';
+import { StatusSheet } from '../components/StatusSheet';
+import type { Lead } from '../lib/api';
 
 const nf = new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 });
 const rowDir = I18nManager.isRTL ? 'row' : 'row-reverse';
@@ -29,6 +32,7 @@ export default function Leads() {
   const [refreshing, setRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
+  const [statusFor, setStatusFor] = useState<Lead | null>(null);
 
   async function onRefresh() {
     setRefreshing(true);
@@ -38,7 +42,7 @@ export default function Leads() {
 
   const customMap = useMemo(() => new Map(statuses.map((st) => [st.id, st])), [statuses]);
   const label = (st: string) => statusLabel[st] ?? customMap.get(st)?.label ?? st;
-  const color = (st: string) => statusColor[st] ?? c.primary;
+  const color = (st: string) => statusColor[st] ?? (customMap.get(st) ? customStatusHex(customMap.get(st)!.color) : c.primary);
 
   const categoryLeads = useMemo(() => {
     if (!category) return leads;
@@ -119,29 +123,41 @@ export default function Leads() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={<Text style={s.empty}>אין לידים תואמים.</Text>}
-        renderItem={({ item }) => (
-          <Pressable style={[s.row, { flexDirection: rowDir, borderRightColor: color(item.status) }]} onPress={() => router.push(`/lead/${item.id}`)}>
-            <View style={{ flex: 1 }}>
-              <Text style={s.name} numberOfLines={1}>{item.name ?? '-'}</Text>
-              <Text style={s.meta} numberOfLines={1}>
-                {item.phone ? formatPhone(item.phone) : ''}
-                {item.created_at ? ` · ${new Date(item.created_at).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' })}` : ''}
-                {item.notes_count > 0 ? ` · ${item.notes_count} הערות` : ''}
-              </Text>
-            </View>
-            <View style={[s.trailing, { flexDirection: rowDir }]}>
-              <View style={[s.chip, { backgroundColor: color(item.status) + '33', borderColor: color(item.status) }]}>
-                <Text style={[s.chipText, { color: color(item.status) }]}>{label(item.status)}</Text>
+        renderItem={({ item, index }) => (
+          <FadeIn index={index < 9 ? index : undefined} delay={10}>
+            <Pressable style={[s.row, { flexDirection: rowDir, borderRightColor: color(item.status) }]} onPress={() => router.push(`/lead/${item.id}`)}>
+              <View style={{ flex: 1 }}>
+                <Text style={s.name} numberOfLines={1}>{item.name ?? '-'}</Text>
+                <Text style={s.meta} numberOfLines={1}>
+                  {item.phone ? formatPhone(item.phone) : ''}
+                  {item.created_at ? ` · ${new Date(item.created_at).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' })}` : ''}
+                  {item.notes_count > 0 ? ` · ${item.notes_count} הערות` : ''}
+                </Text>
               </View>
-              {item.phone ? (
-                <>
-                  <Pressable style={[s.actBtn, { backgroundColor: c.wa }]} onPress={() => Linking.openURL(`https://wa.me/${item.phone!.replace(/\D/g, '')}`)}><FontAwesome name="whatsapp" size={18} color="#fff" /></Pressable>
-                  <Pressable style={[s.actBtn, { backgroundColor: c.primary }]} onPress={() => Linking.openURL(`tel:${item.phone}`)}><Feather name="phone" size={16} color="#fff" /></Pressable>
-                </>
-              ) : null}
-            </View>
-          </Pressable>
+              <View style={[s.trailing, { flexDirection: rowDir }]}>
+                <Pressable style={[s.chip, { backgroundColor: color(item.status) + '33', borderColor: color(item.status) }]} onPress={() => setStatusFor(item)} hitSlop={6}>
+                  <Text style={[s.chipText, { color: color(item.status) }]}>{label(item.status)}</Text>
+                </Pressable>
+                {item.phone ? (
+                  <>
+                    <Pressable style={[s.actBtn, { backgroundColor: c.wa }]} onPress={() => Linking.openURL(`https://wa.me/${item.phone!.replace(/\D/g, '')}`)}><FontAwesome name="whatsapp" size={18} color="#fff" /></Pressable>
+                    <Pressable style={[s.actBtn, { backgroundColor: c.primary }]} onPress={() => Linking.openURL(`tel:${item.phone}`)}><Feather name="phone" size={16} color="#fff" /></Pressable>
+                  </>
+                ) : null}
+              </View>
+            </Pressable>
+          </FadeIn>
         )}
+      />
+
+      <StatusSheet
+        visible={!!statusFor}
+        leadId={statusFor?.id ?? null}
+        categoryId={statusFor?.category_id ?? null}
+        currentStatus={statusFor?.status ?? null}
+        customStatuses={statuses}
+        onClose={() => setStatusFor(null)}
+        onChanged={refresh}
       />
     </View>
   );

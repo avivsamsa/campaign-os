@@ -8,11 +8,13 @@
     "android": "expo start --android"
   },
   "dependencies": {
-    "@expo/vector-icons": "^15.0.0",
+    "@expo/vector-icons": "^15.0.3",
     "babel-preset-expo": "~54.0.10",
     "expo": "^54.0.0",
     "expo-asset": "~12.0.0",
+    "expo-audio": "~1.1.1",
     "expo-constants": "~18.0.0",
+    "expo-haptics": "~15.0.8",
     "expo-linking": "~8.0.0",
     "expo-router": "~6.0.0",
     "expo-secure-store": "~15.0.0",

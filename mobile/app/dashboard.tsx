@@ -103,23 +103,40 @@ export default function Dashboard() {
         {dashboard && dashboard.categories.length > 1 ? (
           <View style={{ marginTop: 26 }}>
             <FadeIn delay={300}><Text style={s.section}>קמפיינים פעילים</Text></FadeIn>
-            <View style={{ gap: 10, marginTop: 14 }}>
-              {dashboard.categories.map((cat, i) => (
-                <FadeIn key={cat.key} index={i} delay={360}>
-                  <PressableScale
-                    style={[s.catRow, { flexDirection: rowDir }]}
-                    onPress={() => router.push({ pathname: '/leads', params: { category: cat.key, name: cat.name } })}
-                    accessibilityLabel={`${cat.name}, ${cat.count} לידים`}
-                  >
-                    <Text style={s.catName}>{cat.name}</Text>
-                    <View style={[s.catRight, { flexDirection: rowDir }]}>
-                      {cat.new_count > 0 ? <View style={s.newDot} /> : null}
-                      <Text style={[s.catCount, num]}>{nf.format(cat.count)} לידים</Text>
-                      <Feather name={chevron} size={18} color={c.muted2} />
-                    </View>
-                  </PressableScale>
-                </FadeIn>
-              ))}
+            <View style={{ gap: 12, marginTop: 14 }}>
+              {dashboard.categories.map((cat, i) => {
+                const pct = cat.count > 0 ? Math.max(4, Math.min(100, Math.round((cat.new_count / cat.count) * 100))) : 0;
+                return (
+                  <FadeIn key={cat.key} index={i} delay={360}>
+                    <PressableScale
+                      style={s.catCard}
+                      onPress={() => router.push({ pathname: '/leads', params: { category: cat.key, name: cat.name } })}
+                      accessibilityLabel={`${cat.name}, ${cat.count} לידים`}
+                    >
+                      <View style={[s.catTop, { flexDirection: rowDir }]}>
+                        <View style={[s.catLead, { flexDirection: rowDir }]}>
+                          <View style={s.catIcon}><Feather name="layers" size={19} color={c.primary} /></View>
+                          <View style={{ gap: 2 }}>
+                            <Text style={s.catName}>{cat.name}</Text>
+                            <Text style={[s.catCount, num]}>{nf.format(cat.count)} לידים</Text>
+                          </View>
+                        </View>
+                        <View style={[s.catTrail, { flexDirection: rowDir }]}>
+                          {cat.new_count > 0 ? (
+                            <View style={s.newPill}>
+                              <Text style={[s.newPillText, num]}>{nf.format(cat.new_count)} חדשים</Text>
+                            </View>
+                          ) : null}
+                          <Feather name={chevron} size={18} color={c.muted2} />
+                        </View>
+                      </View>
+                      <View style={s.track}>
+                        <View style={[s.trackFill, { width: `${pct}%` }]} />
+                      </View>
+                    </PressableScale>
+                  </FadeIn>
+                );
+              })}
             </View>
           </View>
         ) : null}
@@ -144,9 +161,15 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   cta: { marginTop: 18, backgroundColor: c.surface, borderRadius: 14, height: 50, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: c.border },
   ctaText: { color: c.text2, fontSize: 15.5, fontWeight: '700' },
   section: { color: c.text2, fontSize: 15, fontWeight: '700', textAlign: 'center' },
-  catRow: { alignItems: 'center', justifyContent: 'space-between', backgroundColor: c.surface, borderRadius: 16, paddingHorizontal: 18, paddingVertical: 17, borderWidth: c.isDark ? 0 : 1, borderColor: c.border },
-  catName: { color: c.text, fontSize: 16.5, fontWeight: '700' },
-  catRight: { alignItems: 'center', gap: 8 },
-  catCount: { color: c.muted, fontSize: 13.5 },
-  newDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: c.primary },
+  catCard: { backgroundColor: c.surface, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 15, gap: 13, borderWidth: c.isDark ? 0 : 1, borderColor: c.border },
+  catTop: { alignItems: 'center', justifyContent: 'space-between' },
+  catLead: { alignItems: 'center', gap: 12 },
+  catIcon: { width: 42, height: 42, borderRadius: 12, backgroundColor: c.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  catName: { color: c.text, fontSize: 16.5, fontWeight: '800', textAlign: 'right' },
+  catCount: { color: c.muted, fontSize: 13, textAlign: 'right' },
+  catTrail: { alignItems: 'center', gap: 10 },
+  newPill: { backgroundColor: c.primary, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 5 },
+  newPillText: { color: '#fff', fontSize: 12.5, fontWeight: '800' },
+  track: { height: 5, borderRadius: 3, backgroundColor: c.isDark ? c.surface2 : c.border, overflow: 'hidden' },
+  trackFill: { height: '100%', borderRadius: 3, backgroundColor: c.primary },
 });

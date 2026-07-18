@@ -56,6 +56,8 @@ async function send<T>(path: string, method: string, body?: unknown): Promise<T>
 export const getLeads = () => get<{ leads: Lead[] }>('/api/portal/leads').then((d) => d.leads);
 export const getStatuses = () =>
   get<{ statuses: CustomStatus[] }>('/api/portal/statuses').then((d) => d.statuses ?? []);
+export const addStatus = (label: string, color: string) =>
+  send<{ status: CustomStatus }>('/api/portal/statuses', 'POST', { label, color });
 export const getNotes = (id: string) =>
   get<{ notes: Note[] }>(`/api/portal/leads/${id}/notes`).then((d) => d.notes ?? []);
 export const addNote = (id: string, body: string) =>

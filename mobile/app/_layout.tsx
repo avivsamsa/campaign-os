@@ -14,9 +14,11 @@ import { Stack, router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { View } from 'react-native';
 import { AuthProvider } from '../lib/auth';
 import { DataProvider } from '../lib/data';
 import { NewLeadAlert } from '../components/NewLeadAlert';
+import { BrandSplash } from '../components/BrandSplash';
 import { ThemeProvider, useTheme } from '../lib/theme-context';
 
 // כפתור חזרה בצד ימין (RTL) — ה-native header לא מבצע מירור אוטומטי.
@@ -47,7 +49,7 @@ export default function RootLayout() {
 function ThemedApp() {
   const { colors, scheme } = useTheme();
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <StatusBar style={scheme === 'light' ? 'dark' : 'light'} />
       <Stack
         screenOptions={{
@@ -69,6 +71,7 @@ function ThemedApp() {
         <Stack.Screen name="notifications" options={{ title: 'התראות' }} />
         <Stack.Screen name="settings" options={{ title: 'חשבון' }} />
       </Stack>
-    </>
+      <BrandSplash />
+    </View>
   );
 }

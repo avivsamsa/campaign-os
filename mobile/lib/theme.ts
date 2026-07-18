@@ -86,6 +86,22 @@ export const statusLabel: Record<string, string> = {
 
 export const BUILTIN_STATUSES = Object.keys(statusLabel);
 
+// פלטת צבעים לסטטוסים מותאמים — תואם ל-lib/lead-statuses בצד השרת (color = שם).
+export const STATUS_COLORS: Record<string, string> = {
+  blue: '#3b82f6',
+  green: '#22c55e',
+  orange: '#f97316',
+  purple: '#8b5cf6',
+  teal: '#14b8a6',
+  pink: '#ec4899',
+  red: '#ef4444',
+  indigo: '#6366f1',
+  amber: '#f59e0b',
+  gray: '#94a3b8',
+};
+export const STATUS_COLOR_NAMES = Object.keys(STATUS_COLORS);
+export const customStatusHex = (name?: string | null) => (name && STATUS_COLORS[name]) || STATUS_COLORS.gray;
+
 /** תצוגת מספר טלפון ישראלי: +972523456789 → 052-345-6789 (תצוגה בלבד). */
 export function formatPhone(raw: string | null | undefined): string {
   if (!raw) return '';
