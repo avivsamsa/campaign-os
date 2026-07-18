@@ -61,6 +61,9 @@ function ThemedApp() {
           // RTL: כפתור החזרה בצד ימין במקום שמאל
           headerBackVisible: false,
           headerRight: () => <HeaderBack />,
+          // החלקה לחזרה מכל רוחב המסך (כמו יציאה מצ'אט בוואטסאפ), מודע ל-RTL
+          gestureEnabled: true,
+          fullScreenGestureEnabled: true,
         }}
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />

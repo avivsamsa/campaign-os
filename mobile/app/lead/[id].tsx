@@ -23,7 +23,7 @@ import {
 } from '../../lib/api';
 import { useData } from '../../lib/data';
 import { useColors } from '../../lib/theme-context';
-import { BUILTIN_STATUSES, formatPhone, statusColor, statusLabel, type Palette } from '../../lib/theme';
+import { BUILTIN_STATUSES, customStatusHex, formatPhone, statusColor, statusLabel, type Palette } from '../../lib/theme';
 
 const nf = new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 });
 const dt = (iso: string) =>
@@ -58,6 +58,13 @@ export default function LeadDetail() {
 
   // כניסה לליד = ההתראה נקראה
   useEffect(() => { if (id) markLeadRead(id); }, [id, markLeadRead]);
+
+  // עדכון אופטימי — הצ'יפ נדלק מיד, הרשת רצה ברקע (חלק, לא "תקוע")
+  const [optStatus, setOptStatus] = useState<string | null>(null);
+  const displayStatus = optStatus ?? lead?.status ?? '';
+  useEffect(() => {
+    if (lead && optStatus && lead.status === optStatus) setOptStatus(null);
+  }, [lead, optStatus]);
 
   const [notes, setNotes] = useState<Note[]>([]);
   const [notesLoading, setNotesLoading] = useState(true);
@@ -106,31 +113,37 @@ export default function LeadDetail() {
       }
       return;
     }
+    setOptStatus(st); // משוב מיידי
     try {
       await updateLead(id, { status: st });
       afterChange();
     } catch (e) {
+      setOptStatus(null);
       Alert.alert('שגיאה', e instanceof Error ? e.message : 'עדכון נכשל');
     }
   }
 
   async function confirmAmount() {
     const amount = amountVal ? Number(amountVal.replace(/[^\d.]/g, '')) : null;
+    setAmountModal(false);
+    setOptStatus('closed');
     try {
       await updateLead(id, { status: 'closed', deal_value: amount });
-      setAmountModal(false);
       afterChange();
     } catch (e) {
+      setOptStatus(null);
       Alert.alert('שגיאה', e instanceof Error ? e.message : 'עדכון נכשל');
     }
   }
 
   async function pickReason(rid: string) {
+    setReasonModal(false);
+    setOptStatus('irrelevant');
     try {
       await updateLead(id, { status: 'irrelevant', reason_id: rid });
-      setReasonModal(false);
       afterChange();
     } catch (e) {
+      setOptStatus(null);
       Alert.alert('שגיאה', e instanceof Error ? e.message : 'עדכון נכשל');
     }
   }
@@ -192,7 +205,7 @@ export default function LeadDetail() {
         <Text style={s.label}>סטטוס</Text>
         <View style={s.statusWrap}>
           {BUILTIN_STATUSES.map((st) => {
-            const active = lead.status === st;
+            const active = displayStatus === st;
             const col = statusColor[st] ?? c.primary;
             return (
               <Pressable key={st} onPress={() => changeStatus(st)} style={[s.statusChip, { borderColor: col }, active && { backgroundColor: col + '33' }]}>
@@ -201,10 +214,11 @@ export default function LeadDetail() {
             );
           })}
           {statuses.map((cs) => {
-            const active = lead.status === cs.id;
+            const active = displayStatus === cs.id;
+            const col = customStatusHex(cs.color);
             return (
-              <Pressable key={cs.id} onPress={() => changeStatus(cs.id)} style={[s.statusChip, { borderColor: c.primary }, active && { backgroundColor: c.primarySoft }]}>
-                <Text style={[s.statusChipText, { color: active ? c.primary : c.text2 }]}>{cs.label}</Text>
+              <Pressable key={cs.id} onPress={() => changeStatus(cs.id)} style={[s.statusChip, { borderColor: col }, active && { backgroundColor: col + '33' }]}>
+                <Text style={[s.statusChipText, { color: active ? col : c.text2 }]}>{cs.label}</Text>
               </Pressable>
             );
           })}

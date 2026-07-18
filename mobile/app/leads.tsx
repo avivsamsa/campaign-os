@@ -95,7 +95,7 @@ export default function Leads() {
 
   return (
     <View style={s.wrap}>
-      <Stack.Screen options={{ title: name ?? 'הלידים שלך' }} />
+      <Stack.Screen options={{ title: name ?? 'הלידים שלך', fullScreenGestureEnabled: false }} />
 
       <View style={s.header}>
         <View style={s.stats}>
