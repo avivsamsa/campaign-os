@@ -11,6 +11,8 @@ type DataState = {
   messages: Message[];
   unreadMessages: number;
   markMessagesSeen: () => void;
+  readLeads: Set<string>;
+  markLeadRead: (id: string) => void;
   ready: boolean;
   refresh: () => Promise<void>;
 };
@@ -22,6 +24,8 @@ const DataContext = createContext<DataState>({
   messages: [],
   unreadMessages: 0,
   markMessagesSeen: () => {},
+  readLeads: new Set(),
+  markLeadRead: () => {},
   ready: false,
   refresh: async () => {},
 });
@@ -34,6 +38,8 @@ export function onNewLeads(cb: ((leads: Lead[]) => void) | null) {
 
 const POLL_MS = 12000;
 const MSG_SEEN_KEY = 'messages_seen_at';
+const READ_LEADS_KEY = 'read_leads';
+const READ_LEADS_CAP = 200;
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const { token } = useAuth();
@@ -42,16 +48,29 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [statuses, setStatuses] = useState<CustomStatus[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [seenAt, setSeenAt] = useState<number>(0);
+  const [readLeads, setReadLeads] = useState<Set<string>>(new Set());
   const [ready, setReady] = useState(false);
   const seen = useRef<Set<string>>(new Set());
   const first = useRef(true);
   const inflight = useRef(false);
 
-  // טעינת חותמת "נצפה לאחרונה" של העדכונים
+  // טעינת חותמת "נצפה לאחרונה" של העדכונים + רשימת לידים שנקראו
   useEffect(() => {
     SecureStore.getItemAsync(MSG_SEEN_KEY)
       .then((v) => { if (v) setSeenAt(Number(v) || 0); })
       .catch(() => {});
+    SecureStore.getItemAsync(READ_LEADS_KEY)
+      .then((v) => { if (v) { try { setReadLeads(new Set(JSON.parse(v))); } catch { /* ignore */ } } })
+      .catch(() => {});
+  }, []);
+
+  const markLeadRead = useCallback((id: string) => {
+    setReadLeads((prev) => {
+      if (prev.has(id)) return prev;
+      const arr = [...prev, id].slice(-READ_LEADS_CAP);
+      SecureStore.setItemAsync(READ_LEADS_KEY, JSON.stringify(arr)).catch(() => {});
+      return new Set(arr);
+    });
   }, []);
 
   const refresh = useCallback(async () => {
@@ -124,7 +143,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   return (
     <DataContext.Provider
-      value={{ leads, dashboard, statuses, messages, unreadMessages, markMessagesSeen, ready, refresh }}
+      value={{ leads, dashboard, statuses, messages, unreadMessages, markMessagesSeen, readLeads, markLeadRead, ready, refresh }}
     >
       {children}
     </DataContext.Provider>

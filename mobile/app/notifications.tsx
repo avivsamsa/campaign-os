@@ -33,7 +33,7 @@ function initials(name: string | null): string {
 }
 
 export default function Notifications() {
-  const { leads, messages, ready, refresh, markMessagesSeen } = useData();
+  const { leads, messages, readLeads, ready, refresh, markMessagesSeen } = useData();
   const c = useColors();
   const s = useMemo(() => makeStyles(c), [c]);
   const [refreshing, setRefreshing] = useState(false);
@@ -41,13 +41,17 @@ export default function Notifications() {
   // סימון עדכונים כ"נקראו" בכל פתיחת המסך
   useFocusEffect(useCallback(() => { markMessagesSeen(); }, [markMessagesSeen]));
 
+  // ליד נקרא = נכנסו אליו (readLeads) או שכבר טופל (סטטוס אינו 'חדש')
+  const isLeadRead = (l: Lead) => readLeads.has(l.id) || l.status !== 'new';
+
   const items = useMemo<Item[]>(() => {
     const msg: Item[] = messages.map((m) => ({ kind: 'message', at: new Date(m.created_at).getTime(), msg: m }));
+    // מציגים לידים חדשים + לידים שכבר נכנסו אליהם (נשארים כ"נקראו")
     const ld: Item[] = leads
-      .filter((l) => l.status === 'new')
+      .filter((l) => l.status === 'new' || readLeads.has(l.id))
       .map((l) => ({ kind: 'lead', at: new Date(l.created_at).getTime(), lead: l }));
     return [...msg, ...ld].sort((a, b) => b.at - a.at);
-  }, [messages, leads]);
+  }, [messages, leads, readLeads]);
 
   async function onRefresh() {
     setRefreshing(true);
@@ -90,28 +94,33 @@ export default function Notifications() {
               </View>
             </FadeIn>
           ) : (
-            <FadeIn index={index} delay={20}>
-              <Pressable
-                style={({ pressed }) => [s.row, s.rowUnread, { flexDirection: rowDir }, pressed && s.rowPressed]}
-                onPress={() => router.push(`/lead/${item.lead.id}`)}
-              >
-                <View style={s.avatarWrap}>
-                  <View style={s.avatar}><Text style={s.avatarTxt}>{initials(item.lead.name)}</Text></View>
-                  <View style={s.avatarBadge}><Feather name="user-plus" size={11} color="#fff" /></View>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={s.title} numberOfLines={2}>
-                    <Text style={s.titleBold}>{item.lead.name || 'ליד חדש'}</Text>
-                    {' — ליד חדש ממתין לטיפול'}
-                  </Text>
-                  <Text style={s.meta} numberOfLines={1}>
-                    {item.lead.category_name ? `${item.lead.category_name} · ` : ''}
-                    {timeAgo(item.lead.created_at)}
-                  </Text>
-                </View>
-                <View style={s.unreadDot} />
-              </Pressable>
-            </FadeIn>
+            (() => {
+              const read = isLeadRead(item.lead);
+              return (
+                <FadeIn index={index} delay={20}>
+                  <Pressable
+                    style={({ pressed }) => [s.row, { flexDirection: rowDir }, !read && s.rowUnread, pressed && s.rowPressed]}
+                    onPress={() => router.push(`/lead/${item.lead.id}`)}
+                  >
+                    <View style={s.avatarWrap}>
+                      <View style={[s.avatar, read && { opacity: 0.75 }]}><Text style={s.avatarTxt}>{initials(item.lead.name)}</Text></View>
+                      <View style={[s.avatarBadge, read && { backgroundColor: c.muted2 }]}><Feather name="user-plus" size={11} color="#fff" /></View>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.title} numberOfLines={2}>
+                        <Text style={read ? s.titleRead : s.titleBold}>{item.lead.name || 'ליד חדש'}</Text>
+                        {' — ליד חדש ממתין לטיפול'}
+                      </Text>
+                      <Text style={s.meta} numberOfLines={1}>
+                        {item.lead.category_name ? `${item.lead.category_name} · ` : ''}
+                        {timeAgo(item.lead.created_at)}
+                      </Text>
+                    </View>
+                    {read ? null : <View style={s.unreadDot} />}
+                  </Pressable>
+                </FadeIn>
+              );
+            })()
           )
         }
       />
@@ -131,6 +140,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   avatarBadge: { position: 'absolute', bottom: -1, left: -1, width: 22, height: 22, borderRadius: 11, backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: c.bg },
   title: { color: c.text2, fontSize: 15, textAlign: 'right', lineHeight: 21 },
   titleBold: { color: c.text, fontWeight: '800', fontSize: 15.5, textAlign: 'right' },
+  titleRead: { color: c.muted, fontWeight: '600', fontSize: 15.5, textAlign: 'right' },
   body: { color: c.text2, fontSize: 14, textAlign: 'right', marginTop: 3, lineHeight: 20 },
   meta: { color: c.muted, fontSize: 13, textAlign: 'right', marginTop: 3 },
   unreadDot: { width: 11, height: 11, borderRadius: 6, backgroundColor: c.primary },

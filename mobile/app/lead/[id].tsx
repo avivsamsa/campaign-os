@@ -50,11 +50,14 @@ function noteText(n: Note): string {
 
 export default function LeadDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { leads, statuses, ready, refresh } = useData();
+  const { leads, statuses, ready, refresh, markLeadRead } = useData();
   const c = useColors();
   const s = useMemo(() => makeStyles(c), [c]);
 
   const lead = leads.find((l) => l.id === id) ?? null;
+
+  // כניסה לליד = ההתראה נקראה
+  useEffect(() => { if (id) markLeadRead(id); }, [id, markLeadRead]);
 
   const [notes, setNotes] = useState<Note[]>([]);
   const [notesLoading, setNotesLoading] = useState(true);

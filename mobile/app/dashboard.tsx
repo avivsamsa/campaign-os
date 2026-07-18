@@ -23,14 +23,18 @@ const KPIS: { key: KpiKey; label: string; icon: keyof typeof Feather.glyphMap; m
 
 export default function Dashboard() {
   const { clientName } = useAuth();
-  const { dashboard, leads, unreadMessages, ready, refresh } = useData();
+  const { dashboard, leads, unreadMessages, readLeads, ready, refresh } = useData();
   const c = useColors();
   const s = useMemo(() => makeStyles(c), [c]);
   const [refreshing, setRefreshing] = useState(false);
 
-  // באדג' הפעמון = לידים חדשים + עדכונים שלא נקראו
+  // כמה לידים חדשים ממתינים לטיפול (למבט-על) וכמה מהם עדיין לא נקראו (לבאדג')
   const newLeadCount = useMemo(() => leads.filter((l) => l.status === 'new').length, [leads]);
-  const newCount = newLeadCount + unreadMessages;
+  const unreadLeadCount = useMemo(
+    () => leads.filter((l) => l.status === 'new' && !readLeads.has(l.id)).length,
+    [leads, readLeads],
+  );
+  const newCount = unreadLeadCount + unreadMessages;
 
   const t = dashboard?.totals;
   const value = (k: KpiKey, money?: boolean) => {
