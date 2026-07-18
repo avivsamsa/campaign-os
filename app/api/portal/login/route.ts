@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   const sb = getSupabaseClient();
   const { data: client } = await sb
     .from('clients')
-    .select('id, portal_password_hash')
+    .select('id, name, portal_password_hash')
     .ilike('slug', slugParsed.slug)
     .maybeSingle();
 
@@ -37,7 +37,8 @@ export async function POST(req: Request) {
   }
 
   const { value, maxAge } = createSession(client.id as string);
-  const res = NextResponse.json({ ok: true });
+  // token בגוף — לאפליקציה נייטיב (Bearer); הווב משתמש ב-cookie.
+  const res = NextResponse.json({ ok: true, token: value, client: { name: client.name } });
   res.cookies.set(SESSION_COOKIE, value, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',

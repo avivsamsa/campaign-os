@@ -2,7 +2,7 @@
  * פתרון session פורטל בצד שרת — קורא את ה-cookie החתום ומחזיר את הלקוח + הרשאות התצוגה.
  * משמש גם ב-Server Components (pages) וגם ב-Route Handlers.
  */
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { getSupabaseClient } from './supabase';
 import { readSession, SESSION_COOKIE } from './portal-auth';
 
@@ -29,9 +29,14 @@ function toClient(row: Record<string, unknown>): PortalClient {
   };
 }
 
-/** הלקוח המאומת מה-session cookie, או null. */
+/**
+ * הלקוח המאומת — מ-session cookie (ווב) או מ-Authorization: Bearer (אפליקציה נייטיב).
+ */
 export async function resolvePortalSession(): Promise<PortalClient | null> {
-  const sess = readSession(cookies().get(SESSION_COOKIE)?.value);
+  const cookieVal = cookies().get(SESSION_COOKIE)?.value;
+  const auth = headers().get('authorization');
+  const bearer = auth && auth.startsWith('Bearer ') ? auth.slice(7) : null;
+  const sess = readSession(cookieVal ?? bearer);
   if (!sess) return null;
   const sb = getSupabaseClient();
   const { data } = await sb.from('clients').select(SELECT).eq('id', sess.client_id).maybeSingle();
