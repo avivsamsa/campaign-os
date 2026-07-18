@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  I18nManager,
   Linking,
   Pressable,
   RefreshControl,
@@ -17,6 +18,7 @@ import { useData } from '../lib/data';
 import { colors, formatPhone, statusColor, statusLabel } from '../lib/theme';
 
 const nf = new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 });
+const rowDir = I18nManager.isRTL ? 'row' : 'row-reverse';
 
 export default function Leads() {
   const { leads, statuses, ready, refresh } = useData();
@@ -116,7 +118,8 @@ export default function Leads() {
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={<Text style={s.empty}>אין לידים תואמים.</Text>}
         renderItem={({ item }) => (
-          <Pressable style={[s.row, { borderRightColor: color(item.status) }]} onPress={() => router.push(`/lead/${item.id}`)}>
+          <Pressable style={[s.row, { flexDirection: rowDir, borderRightColor: color(item.status) }]} onPress={() => router.push(`/lead/${item.id}`)}>
+            {/* ימין: שם + טלפון/תאריך */}
             <View style={{ flex: 1 }}>
               <Text style={s.name} numberOfLines={1}>{item.name ?? '—'}</Text>
               <Text style={s.meta} numberOfLines={1}>
@@ -125,15 +128,18 @@ export default function Leads() {
                 {item.notes_count > 0 ? ` · ${item.notes_count} הערות` : ''}
               </Text>
             </View>
-            <View style={[s.chip, { backgroundColor: color(item.status) + '33', borderColor: color(item.status) }]}>
-              <Text style={[s.chipText, { color: color(item.status) }]}>{label(item.status)}</Text>
-            </View>
-            {item.phone ? (
-              <View style={s.actions}>
-                <Pressable style={[s.actBtn, { backgroundColor: colors.wa }]} onPress={() => Linking.openURL(`https://wa.me/${item.phone!.replace(/\D/g, '')}`)}><FontAwesome name="whatsapp" size={18} color="#fff" /></Pressable>
-                <Pressable style={[s.actBtn, { backgroundColor: colors.primary }]} onPress={() => Linking.openURL(`tel:${item.phone}`)}><Feather name="phone" size={16} color="#fff" /></Pressable>
+            {/* שמאל: סטטוס + כפתורים מקובצים */}
+            <View style={[s.trailing, { flexDirection: rowDir }]}>
+              <View style={[s.chip, { backgroundColor: color(item.status) + '33', borderColor: color(item.status) }]}>
+                <Text style={[s.chipText, { color: color(item.status) }]}>{label(item.status)}</Text>
               </View>
-            ) : null}
+              {item.phone ? (
+                <>
+                  <Pressable style={[s.actBtn, { backgroundColor: colors.wa }]} onPress={() => Linking.openURL(`https://wa.me/${item.phone!.replace(/\D/g, '')}`)}><FontAwesome name="whatsapp" size={18} color="#fff" /></Pressable>
+                  <Pressable style={[s.actBtn, { backgroundColor: colors.primary }]} onPress={() => Linking.openURL(`tel:${item.phone}`)}><Feather name="phone" size={16} color="#fff" /></Pressable>
+                </>
+              ) : null}
+            </View>
           </Pressable>
         )}
       />
@@ -156,11 +162,11 @@ const s = StyleSheet.create({
   filterChipActive: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
   filterChipText: { color: colors.text2, fontSize: 13, fontWeight: '600' },
   empty: { color: colors.muted, textAlign: 'center', marginTop: 40 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRightWidth: 4, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 12 },
-  name: { color: colors.text, fontSize: 16, fontWeight: '600', textAlign: 'right' },
+  row: { alignItems: 'center', gap: 10, backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRightWidth: 4, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 12 },
+  name: { color: colors.text, fontSize: 16, fontWeight: '700', textAlign: 'right' },
   meta: { color: colors.muted, fontSize: 13, textAlign: 'right', marginTop: 2 },
+  trailing: { alignItems: 'center', gap: 8 },
   chip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, borderWidth: 1 },
   chipText: { fontSize: 12, fontWeight: '700' },
-  actions: { flexDirection: 'row', gap: 6 },
   actBtn: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
 });
