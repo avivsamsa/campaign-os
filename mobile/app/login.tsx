@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../lib/auth';
 import { login } from '../lib/api';
 import { colors } from '../lib/theme';
+import { FadeIn } from '../lib/anim';
 
 export default function Login() {
   const { signIn } = useAuth();
@@ -52,14 +53,14 @@ export default function Login() {
           showsVerticalScrollIndicator={false}
         >
           {/* גיבור מיתוגי */}
-          <View style={s.hero}>
+          <FadeIn style={s.hero} offset={18}>
             <Image source={require('../assets/icon.png')} style={s.logo} />
             <Text style={s.brand}>Campaign OS</Text>
             <Text style={s.tagline}>הפורטל שלך — לידים בזמן אמת</Text>
-          </View>
+          </FadeIn>
 
           {/* טופס */}
-          <View style={s.form}>
+          <FadeIn delay={140} style={s.form}>
             <Text style={s.welcome}>ברוך/ה הבא/ה 👋</Text>
             <Text style={s.hint}>היכנס/י עם שם הפורטל והסיסמה שקיבלת.</Text>
 
@@ -106,7 +107,7 @@ export default function Login() {
             </Pressable>
 
             <Text style={s.foot}>המערכת תזכור אותך במכשיר זה.</Text>
-          </View>
+          </FadeIn>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>

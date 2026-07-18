@@ -5,9 +5,11 @@ import { Feather } from '@expo/vector-icons';
 import { getDashboard, type DashboardData } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { colors } from '../lib/theme';
+import { FadeIn, PressableScale } from '../lib/anim';
 
 const nf = new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 });
 const rowDir = I18nManager.isRTL ? 'row' : 'row-reverse';
+const chevron = I18nManager.isRTL ? 'chevron-left' : 'chevron-right';
 const num = { fontVariant: ['tabular-nums' as const] };
 
 type KpiKey = 'leads' | 'new' | 'revenue' | 'profit';
@@ -74,47 +76,50 @@ export default function Dashboard() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={colors.primary} />}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={s.kicker}>במבט-על</Text>
+        <FadeIn><Text style={s.kicker}>במבט-על</Text></FadeIn>
 
-        {/* KPIs — רגועים ואחידים, היררכיה דרך טיפוגרפיה */}
         <View style={s.grid}>
-          {KPIS.map((k) => (
-            <View key={k.key} style={s.card}>
-              <View style={[s.cardTop, { flexDirection: rowDir }]}>
-                <Text style={s.cardLabel}>{k.label}</Text>
-                <Feather name={k.icon} size={15} color={colors.muted2} />
+          {KPIS.map((k, i) => (
+            <FadeIn key={k.key} index={i} delay={40} style={s.cardWrap}>
+              <View style={s.card}>
+                <View style={[s.cardTop, { flexDirection: rowDir }]}>
+                  <Text style={s.cardLabel}>{k.label}</Text>
+                  <Feather name={k.icon} size={15} color={colors.muted2} />
+                </View>
+                <Text style={[s.cardValue, num, k.accent && newCount > 0 && { color: colors.primary }]}>
+                  {value(k.key, k.money)}
+                </Text>
               </View>
-              <Text style={[s.cardValue, num, k.accent && newCount > 0 && { color: colors.primary }]}>
-                {value(k.key, k.money)}
-              </Text>
-            </View>
+            </FadeIn>
           ))}
         </View>
 
-        {/* פעולה ראשית אחת */}
-        <Pressable style={({ pressed }) => [s.cta, pressed && s.pressed]} onPress={() => router.push('/leads')}>
-          <Feather name={I18nManager.isRTL ? 'chevron-left' : 'chevron-right'} size={20} color="#fff" />
-          <Text style={s.ctaText}>כל הלידים</Text>
-        </Pressable>
+        <FadeIn delay={300}>
+          <PressableScale style={s.cta} onPress={() => router.push('/leads')} accessibilityLabel="כל הלידים">
+            <Feather name={chevron} size={20} color="#fff" />
+            <Text style={s.ctaText}>כל הלידים</Text>
+          </PressableScale>
+        </FadeIn>
 
-        {/* קטגוריות */}
         {data && data.categories.length > 1 ? (
           <View style={{ marginTop: 28 }}>
-            <Text style={s.section}>הקטגוריות שלי</Text>
+            <FadeIn delay={360}><Text style={s.section}>הקטגוריות שלי</Text></FadeIn>
             <View style={{ gap: 10, marginTop: 12 }}>
-              {data.categories.map((c) => (
-                <Pressable
-                  key={c.key}
-                  style={({ pressed }) => [s.catRow, { flexDirection: rowDir }, pressed && s.pressed]}
-                  onPress={() => router.push({ pathname: '/leads', params: { category: c.key, name: c.name } })}
-                >
-                  <Text style={s.catName}>{c.name}</Text>
-                  <View style={[s.catRight, { flexDirection: rowDir }]}>
-                    {c.new_count > 0 ? <View style={s.newDot} /> : null}
-                    <Text style={[s.catCount, num]}>{nf.format(c.count)} לידים</Text>
-                    <Feather name={I18nManager.isRTL ? 'chevron-left' : 'chevron-right'} size={18} color={colors.muted2} />
-                  </View>
-                </Pressable>
+              {data.categories.map((c, i) => (
+                <FadeIn key={c.key} index={i} delay={420}>
+                  <PressableScale
+                    style={[s.catRow, { flexDirection: rowDir }]}
+                    onPress={() => router.push({ pathname: '/leads', params: { category: c.key, name: c.name } })}
+                    accessibilityLabel={`${c.name}, ${c.count} לידים`}
+                  >
+                    <Text style={s.catName}>{c.name}</Text>
+                    <View style={[s.catRight, { flexDirection: rowDir }]}>
+                      {c.new_count > 0 ? <View style={s.newDot} /> : null}
+                      <Text style={[s.catCount, num]}>{nf.format(c.count)} לידים</Text>
+                      <Feather name={chevron} size={18} color={colors.muted2} />
+                    </View>
+                  </PressableScale>
+                </FadeIn>
               ))}
             </View>
           </View>
@@ -133,13 +138,13 @@ const s = StyleSheet.create({
   badgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },
   kicker: { color: colors.muted2, fontSize: 12.5, fontWeight: '700', letterSpacing: 1, textAlign: 'right', marginBottom: 14 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  card: { width: '47%', flexGrow: 1, backgroundColor: colors.surface, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 16, gap: 14 },
+  cardWrap: { width: '47%', flexGrow: 1 },
+  card: { backgroundColor: colors.surface, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 16, gap: 14 },
   cardTop: { alignItems: 'center', justifyContent: 'space-between' },
   cardLabel: { color: colors.muted, fontSize: 13.5, fontWeight: '500' },
   cardValue: { color: colors.text, fontSize: 30, fontWeight: '800', textAlign: 'right', letterSpacing: -0.5 },
   cta: { marginTop: 22, backgroundColor: colors.primary, borderRadius: 16, height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   ctaText: { color: '#fff', fontSize: 16.5, fontWeight: '800' },
-  pressed: { opacity: 0.85 },
   section: { color: colors.text2, fontSize: 15, fontWeight: '700', textAlign: 'right' },
   catRow: { alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.surface, borderRadius: 16, paddingHorizontal: 18, paddingVertical: 17 },
   catName: { color: colors.text, fontSize: 16.5, fontWeight: '700' },
