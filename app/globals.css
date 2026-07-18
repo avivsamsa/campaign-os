@@ -1952,6 +1952,19 @@ body.portal-mode .app-main { margin-right: 0; }
   margin-inline-start: 0.4rem;
 }
 .portal-logout:hover { background: var(--surface-2); color: var(--text); }
+/* מחיקת חשבון — קישור עדין, נגיש אך לא בולט */
+.portal-delete-link {
+  border: none;
+  background: none;
+  color: var(--muted-2);
+  font-family: inherit;
+  font-size: 0.78rem;
+  padding: 0.4rem 0.3rem;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.portal-delete-link:hover { color: var(--danger); }
 
 /* מסך כניסה לפורטל */
 .portal-login {

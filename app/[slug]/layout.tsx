@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getClientBySlug, resolvePortalSession } from '@/lib/portal-session';
 import LogoutButton from './LogoutButton';
+import DeleteAccountButton from './DeleteAccountButton';
 import ThemeToggle from '../ThemeToggle';
 import PortalTabbar from './PortalTabbar';
 
@@ -36,6 +37,7 @@ export default async function PortalSlugLayout({
         <div className="portal-header-actions">
           <ThemeToggle />
           {authed && <LogoutButton slug={params.slug} />}
+          {authed && <DeleteAccountButton slug={params.slug} />}
         </div>
       </header>
       {authed && tabs.length > 0 && <PortalTabbar items={tabs} />}
