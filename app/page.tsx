@@ -147,6 +147,7 @@ export default function Landing() {
       <div className="lp-foot">
         <a href="/privacy">מדיניות פרטיות</a>
         <a href="/terms">תנאי שימוש</a>
+        <a href="/admin-login">התחברות מנהל</a>
       </div>
     </main>
   );
