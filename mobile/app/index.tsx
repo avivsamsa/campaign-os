@@ -12,5 +12,5 @@ export default function Index() {
       </View>
     );
   }
-  return <Redirect href={token ? '/leads' : '/login'} />;
+  return <Redirect href={token ? '/dashboard' : '/login'} />;
 }

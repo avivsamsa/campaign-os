@@ -67,6 +67,13 @@ export const updateLead = (
 export const deleteAccount = () =>
   send<{ ok: boolean; demo?: boolean }>('/api/portal/account', 'DELETE');
 
+export type DashboardData = {
+  client_name: string;
+  totals: { leads: number; new: number; closed: number; revenue: number; profit: number };
+  categories: { key: string; name: string; count: number; new_count: number }[];
+};
+export const getDashboard = () => get<DashboardData>('/api/portal/dashboard');
+
 export type Reason = { id: string; label: string };
 export const getReasons = (category: string | null) =>
   get<{ admin: Reason[]; client: Reason[] }>(`/api/portal/reasons?category=${category ?? ''}`);

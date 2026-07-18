@@ -11,23 +11,21 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { Stack, router, useFocusEffect } from 'expo-router';
+import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { getLeads, getStatuses, type CustomStatus, type Lead } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { colors, formatPhone, statusColor, statusLabel } from '../lib/theme';
 
 const nf = new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 });
-const NONE = '__none__';
 
 export default function Leads() {
   const { signOut } = useAuth();
+  const { category, name } = useLocalSearchParams<{ category?: string; name?: string }>();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [statuses, setStatuses] = useState<CustomStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [err, setErr] = useState('');
-
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
 
@@ -56,25 +54,11 @@ export default function Leads() {
   const label = (st: string) => statusLabel[st] ?? customMap.get(st)?.label ?? st;
   const color = (st: string) => statusColor[st] ?? colors.primary;
 
-  // שער קטגוריות — נגזר מהלידים
-  const gate = useMemo(() => {
-    const map = new Map<string, number>();
-    let uncategorized = 0;
-    for (const l of leads) {
-      if (l.category_name) map.set(l.category_name, (map.get(l.category_name) ?? 0) + 1);
-      else uncategorized += 1;
-    }
-    const arr = [...map.entries()].map(([name, count]) => ({ key: name, name, count }));
-    if (uncategorized > 0) arr.push({ key: NONE, name: 'אחר', count: uncategorized });
-    return arr;
-  }, [leads]);
-  const needsGate = gate.length > 1;
-
   const categoryLeads = useMemo(() => {
-    if (!needsGate || !selectedCategory) return leads;
-    if (selectedCategory === NONE) return leads.filter((l) => !l.category_name);
-    return leads.filter((l) => l.category_name === selectedCategory);
-  }, [leads, needsGate, selectedCategory]);
+    if (!category) return leads;
+    if (category === '__none__') return leads.filter((l) => !l.category_id);
+    return leads.filter((l) => l.category_id === category);
+  }, [leads, category]);
 
   const searchFiltered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -112,81 +96,30 @@ export default function Leads() {
 
   const chipStatuses = useMemo(() => {
     const present = Object.keys(counts);
-    const builtinOrder = Object.keys(statusLabel).filter((s) => present.includes(s));
-    const custom = present.filter((s) => !statusLabel[s]);
+    const builtinOrder = Object.keys(statusLabel).filter((st) => present.includes(st));
+    const custom = present.filter((st) => !statusLabel[st]);
     return [...builtinOrder, ...custom];
   }, [counts]);
 
-  const accountBtn = () => (
-    <Pressable onPress={() => router.push('/settings')} hitSlop={10}>
-      <Text style={s.logout}>חשבון</Text>
-    </Pressable>
-  );
-
-  if (loading) {
-    return <View style={s.center}><ActivityIndicator color={colors.primary} /></View>;
-  }
-
-  // מסך שער קטגוריות
-  if (needsGate && !selectedCategory) {
-    return (
-      <View style={s.gateWrap}>
-        <Stack.Screen options={{ title: 'קטגוריה', headerRight: accountBtn }} />
-        <Text style={s.gateTitle}>איזו קטגוריה?</Text>
-        <Text style={s.sub}>בחר/י קטגוריה כדי לראות את הלידים שלה.</Text>
-        <View style={{ gap: 10, marginTop: 16 }}>
-          {gate.map((c) => (
-            <Pressable key={c.key} style={s.gateBtn} onPress={() => setSelectedCategory(c.key)}>
-              <Text style={s.gateBtnName}>{c.name}</Text>
-              <Text style={s.gateBtnCount}>{c.count} לידים</Text>
-            </Pressable>
-          ))}
-        </View>
-      </View>
-    );
-  }
+  if (loading) return <View style={s.center}><ActivityIndicator color={colors.primary} /></View>;
 
   return (
     <View style={s.wrap}>
-      <Stack.Screen
-        options={{
-          title: needsGate ? (selectedCategory === NONE ? 'אחר' : selectedCategory ?? 'לידים') : 'הלידים שלך',
-          headerRight: accountBtn,
-          headerLeft: needsGate
-            ? () => (
-                <Pressable onPress={() => { setSelectedCategory(null); setStatusFilter(''); setSearch(''); }} hitSlop={10}>
-                  <Text style={s.logout}>← קטגוריות</Text>
-                </Pressable>
-              )
-            : undefined,
-        }}
-      />
+      <Stack.Screen options={{ title: name ?? 'הלידים שלך' }} />
 
-      {/* כותרת קבועה: אנליטיקות + חיפוש + פילטר */}
       <View style={s.header}>
         <View style={s.stats}>
           <View style={s.stat}><Text style={s.statNum}>{nf.format(summary.total)}</Text><Text style={s.statLbl}>לידים</Text></View>
           <View style={s.stat}><Text style={s.statNum}>{nf.format(summary.closed)}</Text><Text style={s.statLbl}>נסגרו</Text></View>
           <View style={[s.stat, s.statFeature]}><Text style={s.statNum}>₪{nf.format(summary.revenue)}</Text><Text style={s.statLbl}>מכירות</Text></View>
         </View>
-        <TextInput
-          style={s.searchInput}
-          value={search}
-          onChangeText={setSearch}
-          placeholder="חיפוש שם או טלפון…"
-          placeholderTextColor={colors.muted}
-          returnKeyType="search"
-        />
+        <TextInput style={s.searchInput} value={search} onChangeText={setSearch} placeholder="חיפוש שם או טלפון…" placeholderTextColor={colors.muted} returnKeyType="search" />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chipsRow}>
           <Pressable onPress={() => setStatusFilter('')} style={[s.filterChip, statusFilter === '' && s.filterChipActive]}>
             <Text style={[s.filterChipText, statusFilter === '' && { color: colors.primary }]}>הכל {summary.total}</Text>
           </Pressable>
           {chipStatuses.map((st) => (
-            <Pressable
-              key={st}
-              onPress={() => setStatusFilter(statusFilter === st ? '' : st)}
-              style={[s.filterChip, { borderColor: color(st) }, statusFilter === st && { backgroundColor: color(st) + '33' }]}
-            >
+            <Pressable key={st} onPress={() => setStatusFilter(statusFilter === st ? '' : st)} style={[s.filterChip, { borderColor: color(st) }, statusFilter === st && { backgroundColor: color(st) + '33' }]}>
               <Text style={[s.filterChipText, { color: color(st) }]}>{label(st)} {counts[st]}</Text>
             </Pressable>
           ))}
@@ -229,7 +162,6 @@ export default function Leads() {
 const s = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: colors.bg },
   center: { flex: 1, backgroundColor: colors.bg, justifyContent: 'center', alignItems: 'center' },
-  logout: { color: colors.muted, fontSize: 15, marginHorizontal: 6 },
   header: { paddingHorizontal: 14, paddingTop: 10, gap: 10, borderBottomColor: colors.border, borderBottomWidth: 1, paddingBottom: 10 },
   stats: { flexDirection: 'row', gap: 8 },
   stat: { flex: 1, backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 14, padding: 12, alignItems: 'center' },
@@ -250,10 +182,4 @@ const s = StyleSheet.create({
   actions: { flexDirection: 'row', gap: 6 },
   actBtn: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   actIcon: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  gateWrap: { flex: 1, backgroundColor: colors.bg, padding: 22, justifyContent: 'center' },
-  gateTitle: { color: colors.text, fontSize: 26, fontWeight: '800', textAlign: 'right' },
-  sub: { color: colors.muted, fontSize: 14, textAlign: 'right', marginTop: 6 },
-  gateBtn: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 16, padding: 18, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  gateBtnName: { color: colors.text, fontSize: 18, fontWeight: '700' },
-  gateBtnCount: { color: colors.muted, fontSize: 14 },
 });

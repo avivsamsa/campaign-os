@@ -31,8 +31,10 @@ export default function RootLayout() {
         >
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="login" options={{ headerShown: false }} />
+          <Stack.Screen name="dashboard" options={{ title: 'הבית שלי' }} />
           <Stack.Screen name="leads" options={{ title: 'הלידים שלך' }} />
           <Stack.Screen name="lead/[id]" options={{ title: 'פרטי ליד' }} />
+          <Stack.Screen name="notifications" options={{ title: 'התראות' }} />
           <Stack.Screen name="settings" options={{ title: 'חשבון' }} />
         </Stack>
       </SafeAreaProvider>

@@ -32,7 +32,7 @@ export default function Login() {
     try {
       const d = await login(slug.trim().toLowerCase(), password);
       await signIn(d.token, d.client?.name ?? null);
-      router.replace('/leads');
+      router.replace('/dashboard');
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'שגיאה');
     } finally {
