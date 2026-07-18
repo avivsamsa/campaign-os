@@ -9,13 +9,25 @@ if (!I18nManager.isRTL) {
   }
 }
 
-import { Stack } from 'expo-router';
+import { Pressable } from 'react-native';
+import { Stack, router } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from '../lib/auth';
 import { DataProvider } from '../lib/data';
 import { NewLeadAlert } from '../components/NewLeadAlert';
 import { ThemeProvider, useTheme } from '../lib/theme-context';
+
+// כפתור חזרה בצד ימין (RTL) — ה-native header לא מבצע מירור אוטומטי.
+function HeaderBack() {
+  const { colors } = useTheme();
+  return (
+    <Pressable onPress={() => router.back()} hitSlop={14} accessibilityLabel="חזרה" style={{ paddingHorizontal: 8, paddingVertical: 4 }}>
+      <Feather name="chevron-right" size={27} color={colors.text} />
+    </Pressable>
+  );
+}
 
 export default function RootLayout() {
   return (
@@ -44,6 +56,9 @@ function ThemedApp() {
           headerTitleStyle: { color: colors.text },
           contentStyle: { backgroundColor: colors.bg },
           headerShadowVisible: false,
+          // RTL: כפתור החזרה בצד ימין במקום שמאל
+          headerBackVisible: false,
+          headerRight: () => <HeaderBack />,
         }}
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
