@@ -10,6 +10,48 @@
 
 ---
 
+## ✅ תוצאת הסריקה המקיפה (לפני הגשה)
+
+עברתי על כל הפרויקט. **הכל תקין, מלבד דבר אחד שכבר תוקן:**
+
+| בדיקה | תוצאה |
+|---|---|
+| קומפילציה (TypeScript) | ✅ 0 שגיאות |
+| `bundleIdentifier` | ✅ `il.co.avivsamsa.campaignos` (עקבי iOS+Android) |
+| Export compliance | ✅ `ITSAppUsesNonExemptEncryption:false` |
+| iPhone-only | ✅ `supportsTablet:false` |
+| הרשאת מיקרופון (expo-audio) | ✅ מבוטלת — לא נבקש |
+| expo-haptics | ✅ לא דורש הרשאה |
+| סודות מוטמעים בקוד | ✅ אין (נסרק — נקי) |
+| כתובת API | ✅ פרודקשן HTTPS (`ppc.avivsamsa.co.il`) |
+| `console.log` שאריות | ✅ אין |
+| מחיקת חשבון בתוך האפליקציה | ✅ קיים + דמו מוגן |
+| קישורי פרטיות/תנאים/תמיכה | ✅ קיימים (דפי הווב קיימים) |
+| נכסים (icon/splash/adaptive/סאונד) | ✅ קיימים, 1024×1024 |
+| **אייקון עם שקיפות (alpha)** | ⚠️➜✅ **תוקן** — אפל דוחה אייקון שיווקי עם alpha. יצרתי `assets/icon-ios.png` אטום (ללא alpha) והפניתי אליו ב-`ios.icon`. |
+| `eas.json` | ✅ נוצר (פרופיל production מוכן) |
+
+**מסקנה: האפליקציה מוכנה טכנית להגשה.** מה שנשאר הוא צעדים שדורשים את חשבון האפל שלך (למטה).
+
+---
+
+## 🚀 Runbook הגשה (הצעדים שלך במחשב)
+
+> דורש את חשבון ה-Apple Developer שלך. הרץ בתיקיית `mobile/`.
+
+```bash
+cd mobile
+npm i -g eas-cli            # פעם אחת
+eas login                  # עם חשבון ה-Expo שלך
+eas init                   # מקשר פרויקט (יוסיף projectId ל-app.json)
+eas build -p ios --profile production   # בונה בענן (~15 דק')
+eas submit -p ios --latest              # מעלה ל-App Store Connect (ישאל Apple ID/Team)
+```
+
+לאחר ההעלאה — ב-App Store Connect: למלא App Privacy (Contact Info, ללא Tracking), חשבון בודק `demo`/`demo2026`, Review Notes (סעיף 3 למטה), Support/Privacy URL, צילומי מסך 6.7″, ולהגיש לביקורת.
+
+---
+
 ## 1. Safety (בטיחות)
 
 | סעיף | נושא | סטטוס | הערה ספציפית לאפליקציה |

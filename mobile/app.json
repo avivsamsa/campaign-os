@@ -16,6 +16,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "il.co.avivsamsa.campaignos",
       "buildNumber": "1",
+      "icon": "./assets/icon-ios.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleDisplayName": "Campaign OS"
