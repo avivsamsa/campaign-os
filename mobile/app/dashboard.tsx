@@ -23,12 +23,14 @@ const KPIS: { key: KpiKey; label: string; icon: keyof typeof Feather.glyphMap; m
 
 export default function Dashboard() {
   const { clientName } = useAuth();
-  const { dashboard, leads, ready, refresh } = useData();
+  const { dashboard, leads, unreadMessages, ready, refresh } = useData();
   const c = useColors();
   const s = useMemo(() => makeStyles(c), [c]);
   const [refreshing, setRefreshing] = useState(false);
 
-  const newCount = useMemo(() => leads.filter((l) => l.status === 'new').length, [leads]);
+  // באדג' הפעמון = לידים חדשים + עדכונים שלא נקראו
+  const newLeadCount = useMemo(() => leads.filter((l) => l.status === 'new').length, [leads]);
+  const newCount = newLeadCount + unreadMessages;
 
   const t = dashboard?.totals;
   const value = (k: KpiKey, money?: boolean) => {
@@ -82,7 +84,7 @@ export default function Dashboard() {
                   <Text style={s.cardLabel}>{k.label}</Text>
                   <Feather name={k.icon} size={15} color={c.muted2} />
                 </View>
-                <Text style={[s.cardValue, num, k.accent && newCount > 0 && { color: c.primary }]}>
+                <Text style={[s.cardValue, num, k.accent && newLeadCount > 0 && { color: c.primary }]}>
                   {value(k.key, k.money)}
                 </Text>
               </View>

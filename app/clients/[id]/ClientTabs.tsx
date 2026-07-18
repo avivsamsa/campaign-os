@@ -10,8 +10,9 @@ import SyncButton from './SyncButton';
 import LeadsManager from './leads/LeadsManager';
 import PortalSettingsEditor from './PortalSettingsEditor';
 import CategoriesEditor from './CategoriesEditor';
+import MessagesEditor from './MessagesEditor';
 
-type TabId = 'overview' | 'brain' | 'profit' | 'leads' | 'categories' | 'sync' | 'portal';
+type TabId = 'overview' | 'brain' | 'profit' | 'leads' | 'categories' | 'sync' | 'portal' | 'messages';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'overview', label: 'סקירה' },
@@ -19,6 +20,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'profit', label: 'מנוע רווח' },
   { id: 'leads', label: 'לידים' },
   { id: 'categories', label: 'קטגוריות' },
+  { id: 'messages', label: 'עדכונים' },
   { id: 'sync', label: 'סנכרון' },
   { id: 'portal', label: 'פורטל' },
 ];
@@ -61,6 +63,7 @@ export default function ClientTabs({ client, brain, profitConfig, leads }: Props
       {tab === 'leads' && <LeadsManager clientId={client.id} initialLeads={leads} />}
       {tab === 'sync' && <SyncButton clientId={client.id} />}
       {tab === 'categories' && <CategoriesEditor clientId={client.id} />}
+      {tab === 'messages' && <MessagesEditor clientId={client.id} />}
       {tab === 'portal' && <PortalSettingsEditor clientId={client.id} />}
     </>
   );

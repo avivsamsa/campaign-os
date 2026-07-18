@@ -1,12 +1,16 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
-import { getDashboard, getLeads, getStatuses, type CustomStatus, type DashboardData, type Lead } from './api';
+import * as SecureStore from 'expo-secure-store';
+import { getDashboard, getLeads, getMessages, getStatuses, type CustomStatus, type DashboardData, type Lead, type Message } from './api';
 import { useAuth } from './auth';
 
 type DataState = {
   leads: Lead[];
   dashboard: DashboardData | null;
   statuses: CustomStatus[];
+  messages: Message[];
+  unreadMessages: number;
+  markMessagesSeen: () => void;
   ready: boolean;
   refresh: () => Promise<void>;
 };
@@ -15,6 +19,9 @@ const DataContext = createContext<DataState>({
   leads: [],
   dashboard: null,
   statuses: [],
+  messages: [],
+  unreadMessages: 0,
+  markMessagesSeen: () => {},
   ready: false,
   refresh: async () => {},
 });
@@ -26,25 +33,36 @@ export function onNewLeads(cb: ((leads: Lead[]) => void) | null) {
 }
 
 const POLL_MS = 12000;
+const MSG_SEEN_KEY = 'messages_seen_at';
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const { token } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [statuses, setStatuses] = useState<CustomStatus[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [seenAt, setSeenAt] = useState<number>(0);
   const [ready, setReady] = useState(false);
   const seen = useRef<Set<string>>(new Set());
   const first = useRef(true);
   const inflight = useRef(false);
 
+  // טעינת חותמת "נצפה לאחרונה" של העדכונים
+  useEffect(() => {
+    SecureStore.getItemAsync(MSG_SEEN_KEY)
+      .then((v) => { if (v) setSeenAt(Number(v) || 0); })
+      .catch(() => {});
+  }, []);
+
   const refresh = useCallback(async () => {
     if (!token || inflight.current) return;
     inflight.current = true;
     try {
-      const [ls, dash, sts] = await Promise.all([
+      const [ls, dash, sts, msgs] = await Promise.all([
         getLeads(),
         getDashboard().catch(() => null),
         getStatuses().catch(() => [] as CustomStatus[]),
+        getMessages().catch(() => [] as Message[]),
       ]);
       const fresh = ls.filter((l) => !seen.current.has(l.id));
       ls.forEach((l) => seen.current.add(l.id));
@@ -53,6 +71,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setLeads(ls);
       if (dash) setDashboard(dash);
       setStatuses(sts);
+      setMessages(msgs);
       setReady(true);
     } catch {
       /* שקט — ננסה שוב בפולינג הבא */
@@ -67,6 +86,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setLeads([]);
       setDashboard(null);
       setStatuses([]);
+      setMessages([]);
       setReady(false);
       seen.current.clear();
       first.current = true;
@@ -90,8 +110,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
     };
   }, [token, refresh]);
 
+  const unreadMessages = useMemo(
+    () => messages.filter((m) => new Date(m.created_at).getTime() > seenAt).length,
+    [messages, seenAt],
+  );
+
+  const markMessagesSeen = useCallback(() => {
+    const newest = messages.reduce((max, m) => Math.max(max, new Date(m.created_at).getTime()), 0);
+    const stamp = Math.max(newest, Date.now());
+    setSeenAt(stamp);
+    SecureStore.setItemAsync(MSG_SEEN_KEY, String(stamp)).catch(() => {});
+  }, [messages]);
+
   return (
-    <DataContext.Provider value={{ leads, dashboard, statuses, ready, refresh }}>
+    <DataContext.Provider
+      value={{ leads, dashboard, statuses, messages, unreadMessages, markMessagesSeen, ready, refresh }}
+    >
       {children}
     </DataContext.Provider>
   );

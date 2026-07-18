@@ -74,6 +74,10 @@ export type DashboardData = {
 };
 export const getDashboard = () => get<DashboardData>('/api/portal/dashboard');
 
+export type Message = { id: string; title: string; body: string; created_at: string };
+export const getMessages = () =>
+  get<{ messages: Message[] }>('/api/portal/messages').then((d) => d.messages ?? []);
+
 export type Reason = { id: string; label: string };
 export const getReasons = (category: string | null) =>
   get<{ admin: Reason[]; client: Reason[] }>(`/api/portal/reasons?category=${category ?? ''}`);
