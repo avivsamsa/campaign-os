@@ -14,12 +14,14 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from '../lib/auth';
 import { DataProvider } from '../lib/data';
+import { NewLeadAlert } from '../components/NewLeadAlert';
 import { colors } from '../lib/theme';
 
 export default function RootLayout() {
   return (
     <AuthProvider>
       <DataProvider>
+        <NewLeadAlert />
         <SafeAreaProvider>
           <StatusBar style="light" />
           <Stack
