@@ -30,7 +30,7 @@ export default function PrivacyPage() {
       `}</style>
 
       <h1>מדיניות פרטיות</h1>
-      <div className="updated">עודכן לאחרונה: {UPDATED}</div>
+      <div className="updated">עודכן לאחרונה: {UPDATED} · <a href="#en">English version below</a></div>
 
       <p className="intro">
         מדיניות זו מתארת כיצד מערכת ניהול הלידים והקמפיינים (&quot;המערכת&quot;, &quot;אנחנו&quot;),
@@ -121,6 +121,90 @@ export default function PrivacyPage() {
         בשאלות בנוגע למדיניות פרטיות זו או לטיפול במידע, ניתן לפנות אל:{' '}
         <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
       </p>
+
+      <hr id="en" style={{ margin: '3.5rem 0 2.25rem', border: 'none', borderTop: '1px solid var(--border)' }} />
+
+      <div dir="ltr" style={{ textAlign: 'left' }}>
+        <h1>Privacy Policy</h1>
+        <div className="updated">Last updated: July 16, 2026</div>
+
+        <p className="intro">
+          This policy describes how the lead &amp; campaign management system (&quot;the System&quot;,
+          &quot;we&quot;), operated by AVIVSAMSA, collects, uses, and stores information. The System is a
+          B2B business tool for managing leads and advertising data for our advertising clients.
+        </p>
+
+        <h2>1. Information We Collect</h2>
+        <ul>
+          <li><strong>Lead details</strong> — name, phone number, and email address, as submitted by users in Facebook / Instagram Lead Ads forms.</li>
+          <li><strong>Advertising performance data</strong> — campaign, ad, and creative identifiers and metrics (impressions, clicks, spend, etc.) pulled from Meta&apos;s advertising platform.</li>
+          <li><strong>Operational information</strong> — lead status, notes, and records entered by the business user to manage the inquiry.</li>
+        </ul>
+
+        <h2>2. Source of Information</h2>
+        <p>
+          Information is collected via Meta&apos;s official API (Graph API) and the Lead Ads Webhook,
+          according to the permissions granted by the ad account owner. We do not collect information
+          directly from visitors through this site, other than the business user&apos;s portal login credentials.
+        </p>
+
+        <h2>3. Purposes of Use</h2>
+        <ul>
+          <li>Delivering leads to the relevant business client who ran the campaign, for contact and handling.</li>
+          <li>Displaying performance data and analyzing the effectiveness of campaigns and ads.</li>
+          <li>Internal management, service improvement, and system security.</li>
+        </ul>
+
+        <h2>4. Our Role</h2>
+        <p>
+          With respect to lead details we act as a &quot;data processor&quot; for our advertising clients,
+          who are the &quot;data owners&quot; responsible for the relationship with the lead. We make the
+          information available only to the specific client to whom the lead belongs.
+        </p>
+
+        <h2>5. Sharing Information</h2>
+        <p>We do not sell personal information. Information may be made available only to:</p>
+        <ul>
+          <li>The business client to whom the lead is assigned.</li>
+          <li>Infrastructure providers used to operate the system (database storage, hosting, and Meta as the data source) — subject to confidentiality and security obligations.</li>
+          <li>Competent authorities, if and when required by law.</li>
+        </ul>
+
+        <h2>6. Data Retention</h2>
+        <p>
+          We retain information as long as it is needed for the purposes for which it was collected, or as
+          long as the engagement with the client is active. Thereafter the information is deleted or made
+          available at the client&apos;s request.
+        </p>
+
+        <h2>7. Data Security</h2>
+        <p>
+          We take reasonable measures to protect the information, including encrypted traffic (HTTPS),
+          permission-based access control, and hashed passwords. However, no system is completely immune.
+        </p>
+
+        <h2>8. Your Rights and Data Deletion</h2>
+        <p>
+          You may contact us to review, correct, or delete information. To request deletion of personal data,
+          email <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> with the relevant details, and we will
+          handle the request within a reasonable time.
+        </p>
+
+        <h2>9. Cookies</h2>
+        <p>
+          The system uses one essential cookie to maintain the business user&apos;s portal login state. We do
+          not use third-party advertising or tracking cookies.
+        </p>
+
+        <h2>10. Changes to This Policy</h2>
+        <p>We may update this policy from time to time. An updated version will be posted on this page with the revised date.</p>
+
+        <h2>11. Contact</h2>
+        <p>
+          For questions regarding this privacy policy or data handling, contact:{' '}
+          <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
+        </p>
+      </div>
     </main>
   );
 }
