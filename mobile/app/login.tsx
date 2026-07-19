@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Image,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -15,6 +16,7 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../lib/auth';
 import { login } from '../lib/api';
+import { API_BASE } from '../lib/config';
 import { useColors } from '../lib/theme-context';
 import type { Palette } from '../lib/theme';
 import { FadeIn } from '../lib/anim';
@@ -93,6 +95,13 @@ export default function Login() {
             >
               {busy ? <ActivityIndicator color="#fff" /> : <Text style={s.btnText}>כניסה</Text>}
             </Pressable>
+
+            <Text style={s.legal}>
+              בהתחברות אני מאשר/ת את{' '}
+              <Text style={s.link} onPress={() => Linking.openURL(`${API_BASE}/terms`)}>תנאי השימוש</Text>
+              {' '}ואת{' '}
+              <Text style={s.link} onPress={() => Linking.openURL(`${API_BASE}/privacy`)}>מדיניות הפרטיות</Text>
+            </Text>
           </FadeIn>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -123,4 +132,6 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   btnDisabled: { opacity: 0.4 },
   btnPressed: { opacity: 0.85 },
   btnText: { color: '#fff', fontSize: 16.5, fontWeight: '800', letterSpacing: 0.5 },
+  legal: { color: c.muted2, fontSize: 12, textAlign: 'center', lineHeight: 18, marginTop: 14, paddingHorizontal: 8 },
+  link: { color: c.muted, fontWeight: '700', textDecorationLine: 'underline' },
 });
