@@ -8,14 +8,14 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
+      "image": "./assets/splash-dark.png",
+      "resizeMode": "cover",
       "backgroundColor": "#0E0C0B"
     },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "il.co.avivsamsa.campaignos",
-      "buildNumber": "2",
+      "buildNumber": "3",
       "icon": "./assets/icon-ios.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,

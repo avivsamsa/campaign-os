@@ -148,9 +148,9 @@ export default function Dashboard() {
 const makeStyles = (c: Palette) => StyleSheet.create({
   wrap: { flex: 1, backgroundColor: c.bg },
   center: { flex: 1, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center' },
-  iconBtn: { paddingHorizontal: 8, paddingVertical: 4 },
-  bellWrap: { paddingHorizontal: 8, paddingVertical: 6 },
-  badge: { position: 'absolute', top: 0, right: 0, backgroundColor: c.primary, minWidth: 19, height: 19, borderRadius: 10, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, borderWidth: 2, borderColor: c.bg },
+  iconBtn: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
+  bellWrap: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
+  badge: { position: 'absolute', top: 1, right: 1, backgroundColor: c.primary, minWidth: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4.5, borderWidth: 2, borderColor: c.bg },
   badgeText: { color: '#fff', fontSize: 10.5, fontWeight: '800', lineHeight: 14, includeFontPadding: false, textAlign: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   cardWrap: { width: '47%', flexGrow: 1 },
