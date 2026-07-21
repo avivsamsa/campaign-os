@@ -1,25 +1,23 @@
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { getClientBySlug, resolvePortalSession } from '@/lib/portal-session';
+import { computePortalDashboard } from '@/lib/portal-dashboard';
 import PortalLogin from './PortalLogin';
+import PortalDashboard from './PortalDashboard';
 
 export const dynamic = 'force-dynamic';
 
-// דף הכניסה של הפורטל: מחובר → הפניה לסעיף הראשון; אחרת → מסך סיסמה.
+// דף הבית של הפורטל: מחובר → דשבורד (KPIs + קמפיינים); אחרת → מסך סיסמה.
 export default async function PortalSlugHome({ params }: { params: { slug: string } }) {
   const client = await getClientBySlug(params.slug);
   if (!client || !client.has_password) notFound();
 
   const session = await resolvePortalSession();
-  if (session && session.id === client.id) {
-    const first = client.show_leads
-      ? 'leads'
-      : client.show_performance
-        ? 'performance'
-        : client.show_creatives
-          ? 'creatives'
-          : null;
-    if (first) redirect(`/${params.slug}/${first}`);
+  const authed = !!session && session.id === client.id;
+
+  if (!authed) {
+    return <PortalLogin slug={params.slug} clientName={client.name} />;
   }
 
-  return <PortalLogin slug={params.slug} clientName={client.name} />;
+  const data = await computePortalDashboard(client.id);
+  return <PortalDashboard slug={params.slug} data={data} />;
 }

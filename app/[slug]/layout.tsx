@@ -25,10 +25,11 @@ export default async function PortalSlugLayout({
   const base = `/${params.slug}`;
 
   const tabs = [
+    { key: 'home', href: base, label: 'בית', exact: true },
     client.show_leads && { key: 'leads', href: `${base}/leads`, label: 'לידים' },
     client.show_performance && { key: 'performance', href: `${base}/performance`, label: 'ביצועים' },
     client.show_creatives && { key: 'creatives', href: `${base}/creatives`, label: 'קריאטיבים' },
-  ].filter(Boolean) as { key: string; href: string; label: string }[];
+  ].filter(Boolean) as { key: string; href: string; label: string; exact?: boolean }[];
 
   return (
     <div className="portal-shell">
