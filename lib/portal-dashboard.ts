@@ -10,17 +10,17 @@ export type PortalDashboard = {
  * חישוב KPIs + קטגוריות לדשבורד הפורטל. משותף ל-API ולעמוד הפורטל בווב.
  */
 export async function computePortalDashboard(clientId: string): Promise<PortalDashboard> {
-  const leads = await fetchClientLeads(clientId);
   const sb = getSupabaseClient();
 
-  const { data: products } = await sb
-    .from('products')
-    .select('id, profit_mode, margin_pct, profit_amount')
-    .eq('client_id', clientId);
-  const prodById = new Map((products ?? []).map((p) => [p.id as string, p]));
+  // הכל במקביל — fetchClientLeads הכבד רץ יחד עם products + client (שלא תלויים בו)
+  const [leads, productsRes, cRes] = await Promise.all([
+    fetchClientLeads(clientId),
+    sb.from('products').select('id, profit_mode, margin_pct, profit_amount').eq('client_id', clientId),
+    sb.from('clients').select('gross_margin').eq('id', clientId).maybeSingle(),
+  ]);
 
-  const { data: c } = await sb.from('clients').select('gross_margin').eq('id', clientId).maybeSingle();
-  const grossMargin = Number(c?.gross_margin ?? 0.5);
+  const prodById = new Map((productsRes.data ?? []).map((p) => [p.id as string, p]));
+  const grossMargin = Number(cRes.data?.gross_margin ?? 0.5);
 
   let newCount = 0;
   let closed = 0;

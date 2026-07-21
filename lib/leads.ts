@@ -89,29 +89,33 @@ export async function fetchClientLeads(clientId: string): Promise<EnrichedLead[]
   if (error) throw new Error(error.message);
   const rows = leads ?? [];
 
-  // תוויות סיבות "לא רלוונטי" עבור הלידים המסומנים
+  // מזהים לשליפות ההעשרה
   const reasonIds = [...new Set(rows.map((l) => l.reason_id).filter(Boolean) as string[])];
-  const reasonLabel = new Map<string, string>();
-  if (reasonIds.length > 0) {
-    const { data: reasons } = await sb.from('lead_reasons').select('id, label').in('id', reasonIds);
-    for (const r of reasons ?? []) reasonLabel.set(r.id as string, r.label as string);
-  }
-
-  // ניתוב טופס → קטגוריה (מוצר)
-  const { data: routes } = await sb
-    .from('lead_form_routes')
-    .select('form_id, product_id')
-    .eq('client_id', clientId);
-  const formToProduct = new Map((routes ?? []).map((r) => [r.form_id as string, r.product_id as string]));
-
-  // שם הקטגוריה (מוצר) — לתצוגה/שער בחירה באפליקציה
-  const { data: products } = await sb
-    .from('products')
-    .select('id, name')
-    .eq('client_id', clientId);
-  const productName = new Map((products ?? []).map((p) => [p.id as string, p.name as string]));
-
   const adIds = [...new Set(rows.map((l) => l.ad_id).filter(Boolean) as string[])];
+  const leadIds = rows.map((l) => l.id as string);
+  const noRows = <T,>() => Promise.resolve({ data: [] as T[], error: null });
+
+  // גל 1 — כל השליפות שתלויות רק בלידים/בלקוח, במקביל (במקום 5 סדרתיות)
+  const [reasonsRes, routesRes, productsRes, adsRes, notesRes] = await Promise.all([
+    reasonIds.length
+      ? sb.from('lead_reasons').select('id, label').in('id', reasonIds)
+      : noRows<{ id: string; label: string }>(),
+    sb.from('lead_form_routes').select('form_id, product_id').eq('client_id', clientId),
+    sb.from('products').select('id, name').eq('client_id', clientId),
+    adIds.length
+      ? sb.from('ads').select('id, campaign_id, creative_id, meta_adset_id, meta_adset_name, name').in('id', adIds)
+      : noRows<Record<string, unknown>>(),
+    rows.length
+      ? sb.from('lead_notes').select('lead_id').eq('kind', 'note').in('lead_id', leadIds)
+      : noRows<{ lead_id: string }>(),
+  ]);
+
+  const reasonLabel = new Map<string, string>();
+  for (const r of reasonsRes.data ?? []) reasonLabel.set(r.id as string, r.label as string);
+
+  const formToProduct = new Map((routesRes.data ?? []).map((r) => [r.form_id as string, r.product_id as string]));
+  const productName = new Map((productsRes.data ?? []).map((p) => [p.id as string, p.name as string]));
+
   const adInfo = new Map<
     string,
     {
@@ -122,62 +126,45 @@ export async function fetchClientLeads(clientId: string): Promise<EnrichedLead[]
       ad_name: string | null;
     }
   >();
-  if (adIds.length > 0) {
-    const { data: ads } = await sb
-      .from('ads')
-      .select('id, campaign_id, creative_id, meta_adset_id, meta_adset_name, name')
-      .in('id', adIds);
-    for (const a of ads ?? []) {
-      adInfo.set(a.id as string, {
-        campaign_id: a.campaign_id as string,
-        creative_id: (a.creative_id as string) ?? null,
-        meta_adset_id: (a.meta_adset_id as string) ?? null,
-        adset_name: (a.meta_adset_name as string) ?? null,
-        ad_name: (a.name as string) ?? null,
-      });
-    }
-  }
-
-  const campaignIds = [...new Set([...adInfo.values()].map((a) => a.campaign_id))];
-  const campaignName = new Map<string, string>();
-  if (campaignIds.length > 0) {
-    const { data: camps } = await sb.from('campaigns').select('id, name').in('id', campaignIds);
-    for (const c of camps ?? []) campaignName.set(c.id as string, (c.name as string) ?? (c.id as string));
-  }
-
-  const creativeIds = [
-    ...new Set([...adInfo.values()].map((a) => a.creative_id).filter(Boolean) as string[]),
-  ];
-  const creativeLabel = new Map<string, string>();
-  const creativeThumb = new Map<string, string | null>();
-  if (creativeIds.length > 0) {
-    const { data: crs } = await sb
-      .from('creatives')
-      .select('id, concept, meta_creative_id, asset_url')
-      .in('id', creativeIds);
-    for (const c of crs ?? []) {
-      creativeLabel.set(
-        c.id as string,
-        (c.concept as string) || `קריאטיב ${c.meta_creative_id ?? c.id}`,
-      );
-      creativeThumb.set(c.id as string, (c.asset_url as string) ?? null);
-    }
+  for (const a of adsRes.data ?? []) {
+    adInfo.set(a.id as string, {
+      campaign_id: a.campaign_id as string,
+      creative_id: (a.creative_id as string) ?? null,
+      meta_adset_id: (a.meta_adset_id as string) ?? null,
+      adset_name: (a.meta_adset_name as string) ?? null,
+      ad_name: (a.name as string) ?? null,
+    });
   }
 
   // ספירת הערות פר ליד — סבילות לטבלה חסרה (מיגרציה לא הורצה עדיין → 0).
   const notesCount = new Map<string, number>();
-  if (rows.length > 0) {
-    const leadIds = rows.map((l) => l.id as string);
-    const { data: notes, error: notesErr } = await sb
-      .from('lead_notes')
-      .select('lead_id')
-      .eq('kind', 'note')
-      .in('lead_id', leadIds);
-    if (!notesErr) {
-      for (const n of notes ?? []) {
-        notesCount.set(n.lead_id as string, (notesCount.get(n.lead_id as string) ?? 0) + 1);
-      }
+  if (!notesRes.error) {
+    for (const n of notesRes.data ?? []) {
+      notesCount.set(n.lead_id as string, (notesCount.get(n.lead_id as string) ?? 0) + 1);
     }
+  }
+
+  // גל 2 — קמפיינים + קריאטיבים (תלויים בתוצאת ה-ads), במקביל
+  const campaignIds = [...new Set([...adInfo.values()].map((a) => a.campaign_id))];
+  const creativeIds = [...new Set([...adInfo.values()].map((a) => a.creative_id).filter(Boolean) as string[])];
+
+  const [campsRes, crsRes] = await Promise.all([
+    campaignIds.length
+      ? sb.from('campaigns').select('id, name').in('id', campaignIds)
+      : noRows<{ id: string; name: string }>(),
+    creativeIds.length
+      ? sb.from('creatives').select('id, concept, meta_creative_id, asset_url').in('id', creativeIds)
+      : noRows<Record<string, unknown>>(),
+  ]);
+
+  const campaignName = new Map<string, string>();
+  for (const c of campsRes.data ?? []) campaignName.set(c.id as string, (c.name as string) ?? (c.id as string));
+
+  const creativeLabel = new Map<string, string>();
+  const creativeThumb = new Map<string, string | null>();
+  for (const c of crsRes.data ?? []) {
+    creativeLabel.set(c.id as string, (c.concept as string) || `קריאטיב ${c.meta_creative_id ?? c.id}`);
+    creativeThumb.set(c.id as string, (c.asset_url as string) ?? null);
   }
 
   return rows.map((l) => {
