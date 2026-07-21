@@ -14,7 +14,7 @@ export default async function PortalLeadsPage({ params }: { params: { slug: stri
   if (!session || session.id !== client.id) redirect(`/${params.slug}`);
   if (!client.show_leads) redirect(`/${params.slug}`);
 
-  const leads = await fetchClientLeads(client.id);
+  const leads = await fetchClientLeads(client.id, { heavy: false });
 
   // קטגוריות (מוצרים) שיש להן לידים — לשער הקטגוריות בפורטל
   const catIds = [...new Set(leads.map((l) => l.category_id).filter(Boolean) as string[])];

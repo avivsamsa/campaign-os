@@ -78,7 +78,15 @@ export function nextClosedAt(status: string, existing: string | null): string | 
   return null;
 }
 
-export async function fetchClientLeads(clientId: string): Promise<EnrichedLead[]> {
+/**
+ * @param opts.heavy  ברירת מחדל true — כולל העשרת מודעה/קמפיין/קריאטיב (לניהול/אדמין).
+ *   false = מדלג על ads/campaigns/creatives (הפורטל והאפליקציה לא צריכים אותם) → מהיר בהרבה.
+ */
+export async function fetchClientLeads(
+  clientId: string,
+  opts?: { heavy?: boolean },
+): Promise<EnrichedLead[]> {
+  const heavy = opts?.heavy !== false;
   const sb = getSupabaseClient();
 
   const { data: leads, error } = await sb
@@ -102,7 +110,7 @@ export async function fetchClientLeads(clientId: string): Promise<EnrichedLead[]
       : noRows<{ id: string; label: string }>(),
     sb.from('lead_form_routes').select('form_id, product_id').eq('client_id', clientId),
     sb.from('products').select('id, name').eq('client_id', clientId),
-    adIds.length
+    heavy && adIds.length
       ? sb.from('ads').select('id, campaign_id, creative_id, meta_adset_id, meta_adset_name, name').in('id', adIds)
       : noRows<Record<string, unknown>>(),
     rows.length
