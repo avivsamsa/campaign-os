@@ -2,11 +2,10 @@ import type { ReactNode } from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getClientBySlug, resolvePortalSession } from '@/lib/portal-session';
-import LogoutButton from './LogoutButton';
-import DeleteAccountButton from './DeleteAccountButton';
 import ThemeToggle from '../ThemeToggle';
 import PortalTabbar from './PortalTabbar';
 import PortalNotifBell from './PortalNotifBell';
+import PortalAccountMenu from './PortalAccountMenu';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,14 +36,18 @@ export default async function PortalSlugLayout({
       <header className="portal-header">
         <div className="portal-brand">פורטל — {client.name}</div>
         <div className="portal-header-actions">
-          <ThemeToggle />
-          {authed && <LogoutButton slug={params.slug} />}
-          {authed && <DeleteAccountButton slug={params.slug} />}
+          {authed ? (
+            <>
+              <PortalNotifBell slug={params.slug} />
+              <PortalAccountMenu slug={params.slug} />
+            </>
+          ) : (
+            <ThemeToggle />
+          )}
         </div>
       </header>
       {authed && tabs.length > 0 && <PortalTabbar items={tabs} />}
       <main className="container portal-main">{children}</main>
-      {authed && <PortalNotifBell slug={params.slug} />}
     </div>
   );
 }

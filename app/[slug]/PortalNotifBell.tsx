@@ -81,24 +81,15 @@ export default function PortalNotifBell({ slug }: { slug: string }) {
   return (
     <>
       <style>{`
-        .portal-main { padding-bottom: 88px; }
-        .pnbell-footer {
-          position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
-          display: flex; justify-content: center; align-items: center;
-          padding: 10px 0 calc(10px + env(safe-area-inset-bottom));
-          background: color-mix(in srgb, var(--bg) 86%, transparent);
-          backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-          border-top: 1px solid var(--hairline);
-        }
-        .pnbell-btn {
+        .pnbell-hbtn {
           position: relative; display: inline-flex; align-items: center; justify-content: center;
-          width: 52px; height: 52px; border-radius: 999px; cursor: pointer;
+          width: 40px; height: 40px; border-radius: 999px; cursor: pointer;
           border: 1px solid var(--border); background: var(--surface); color: var(--text);
-          transition: transform .15s var(--ease), border-color .15s;
+          transition: border-color .15s, background .15s;
         }
-        .pnbell-btn:hover { transform: translateY(-1px); border-color: var(--border-strong); }
+        .pnbell-hbtn:hover { border-color: var(--border-strong); background: var(--surface-2); }
         .pnbell-badge {
-          position: absolute; top: -3px; inset-inline-end: -3px; min-width: 20px; height: 20px; padding: 0 5px;
+          position: absolute; top: -5px; inset-inline-end: -5px; min-width: 18px; height: 18px; padding: 0 5px;
           border-radius: 999px; background: var(--primary); color: #fff; font-size: 11px; font-weight: 800;
           display: flex; align-items: center; justify-content: center; border: 2px solid var(--bg);
         }
@@ -132,12 +123,10 @@ export default function PortalNotifBell({ slug }: { slug: string }) {
         .pnbell-empty { text-align: center; color: var(--muted); padding: 60px 20px; }
       `}</style>
 
-      <footer className="pnbell-footer">
-        <button className="pnbell-btn" onClick={openDrawer} aria-label="התראות">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 0 1-3.4 0" /></svg>
-          {unread > 0 && <span className="pnbell-badge">{unread > 99 ? '99+' : unread}</span>}
-        </button>
-      </footer>
+      <button className="pnbell-hbtn" onClick={openDrawer} aria-label="התראות">
+        <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 0 1-3.4 0" /></svg>
+        {unread > 0 && <span className="pnbell-badge">{unread}</span>}
+      </button>
 
       <div className={`pnbell-overlay ${open ? 'open' : ''}`.trim()} onClick={() => setOpen(false)} aria-hidden={!open}>
         <aside className={`pnbell-drawer ${open ? 'open' : ''}`.trim()} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="התראות">
