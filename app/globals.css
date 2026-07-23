@@ -1175,7 +1175,7 @@ body.portal-mode .app-main { margin-right: 0; }
    Portal (client-facing) shell
    ========================================================================== */
 
-.portal-shell { min-height: 100vh; background: var(--bg); }
+.portal-shell { min-height: 100vh; background: var(--bg); overflow-x: clip; }
 .portal-header {
   position: sticky;
   top: 0;
