@@ -384,37 +384,17 @@ export default function PortalLeadsManager({
     <>
       {errMsg && <div className="banner-error">{errMsg}</div>}
 
-      {needsGate && !selectedCategory ? (
-        <div className="category-gate">
-          <h1>איזו קטגוריה?</h1>
-          <p className="muted">בחר קטגוריה כדי לראות את הלידים שלה.</p>
-          <div className="category-grid">
-            {gateCategories.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                className="category-btn"
-                onClick={() => setSelectedCategory(c.id)}
-              >
-                <span className="category-name">{c.name}</span>
-                <span className="category-count">{c.count} לידים</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : (
-      <>
       <div className="leads-head">
-        {needsGate && (
+        {selectedCategory && (
           <button
             type="button"
             className="cat-back"
             onClick={() => { setSelectedCategory(null); setStatusFilter(''); setSearch(''); }}
           >
-            ← החלף קטגוריה
+            → כל הלידים
           </button>
         )}
-        <h1>{needsGate ? selectedCategoryName : 'הלידים שלך'}</h1>
+        <h1>{selectedCategory ? selectedCategoryName : 'הלידים שלך'}</h1>
       </div>
 
       {categoryLeads.length > 0 && (
@@ -561,8 +541,6 @@ export default function PortalLeadsManager({
           })}
         </div>
       ) : null}
-      </>
-      )}
 
       {amountModal && (
         <div className="lightbox" onClick={() => setAmountModal(null)}>
