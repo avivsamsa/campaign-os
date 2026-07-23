@@ -2,7 +2,7 @@ import { getSupabaseClient } from './supabase';
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
-type LeadForPush = { id: string; name: string | null };
+type LeadForPush = { id: string; name: string | null; category?: string | null };
 
 // שליחת התראת push לכל מכשירי הלקוח על ליד חדש. fire-and-forget — לעולם לא מפיל את הבליעה.
 export async function sendLeadPush(clientId: string, lead: LeadForPush): Promise<void> {
@@ -16,11 +16,13 @@ export async function sendLeadPush(clientId: string, lead: LeadForPush): Promise
     const tokens = (rows ?? []).map((r) => r.token as string).filter(Boolean);
     if (!tokens.length) return;
 
-    const body = lead.name ? `${lead.name} — ליד חדש ממתין לטיפול` : 'ליד חדש ממתין לטיפול';
+    // הקטגוריה (המוצר) בכותרת הראשית — למשל "ליד חדש · שימשיות"
+    const title = lead.category ? `ליד חדש · ${lead.category}` : 'ליד חדש 🎯';
+    const body = lead.name ? `${lead.name} ממתין לטיפול` : 'ליד חדש ממתין לטיפול';
     const messages = tokens.map((to) => ({
       to,
       sound: 'default',
-      title: 'ליד חדש 🎯',
+      title,
       body,
       priority: 'high',
       data: { type: 'new_lead', leadId: lead.id },

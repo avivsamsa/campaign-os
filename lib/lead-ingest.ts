@@ -115,8 +115,29 @@ export async function ingestLead(input: IngestInput): Promise<IngestResult> {
       .select('id')
       .single();
     if (error) return 'error';
+    // הקטגוריה (מוצר) לפי הטופס: form_id → lead_form_routes → products.name
+    let category: string | null = null;
+    if (formId) {
+      try {
+        const { data: route } = await sb
+          .from('lead_form_routes')
+          .select('product_id')
+          .eq('form_id', formId)
+          .maybeSingle();
+        if (route?.product_id) {
+          const { data: prod } = await sb
+            .from('products')
+            .select('name')
+            .eq('id', route.product_id as string)
+            .maybeSingle();
+          category = (prod?.name as string) ?? null;
+        }
+      } catch {
+        /* קטגוריה היא bonus — לא מפילים push בגללה */
+      }
+    }
     // התראת push ללקוח (לא חוסם/מפיל את הקליטה)
-    await sendLeadPush(clientId, { id: inserted.id as string, name });
+    await sendLeadPush(clientId, { id: inserted.id as string, name, category });
     return 'inserted';
   } catch {
     return 'error';
