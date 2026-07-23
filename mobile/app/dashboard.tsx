@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { ActivityIndicator, I18nManager, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, I18nManager, PanResponder, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../lib/auth';
@@ -47,10 +47,22 @@ export default function Dashboard() {
     setRefreshing(false);
   }
 
+  // swipe אופקי בדשבורד (כמו אינסטגרם): ימין→שמאל = התראות, שמאל→ימין = חשבון.
+  // מזהה רק תנועה אופקית מובהקת כדי לא להתנגש בגלילה האנכית.
+  const swipe = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 26 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6,
+      onPanResponderRelease: (_e, g) => {
+        if (g.dx <= -55) router.push('/notifications');
+        else if (g.dx >= 55) router.push('/settings');
+      },
+    }),
+  ).current;
+
   if (!ready && !dashboard) return <View style={s.center}><ActivityIndicator color={c.primary} /></View>;
 
   return (
-    <View style={s.wrap}>
+    <View style={s.wrap} {...swipe.panHandlers}>
       <Stack.Screen
         options={{
           title: clientName ?? dashboard?.client_name ?? 'הבית שלי',
