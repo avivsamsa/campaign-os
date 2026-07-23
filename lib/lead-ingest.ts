@@ -6,6 +6,7 @@
 import { getSupabaseClient } from './supabase';
 import { metaGet } from './meta';
 import { leadFields } from './sync';
+import { sendLeadPush } from './push';
 
 export type IngestInput = {
   leadgen_id: string;
@@ -96,20 +97,27 @@ export async function ingestLead(input: IngestInput): Promise<IngestResult> {
       .maybeSingle();
     if (exists) return 'exists';
 
-    const { error } = await sb.from('leads').insert({
-      client_id: clientId,
-      campaign_id: campUuid,
-      ad_id: adUuid,
-      meta_lead_id: input.leadgen_id,
-      form_id: formId,
-      name,
-      phone,
-      email,
-      status: 'new',
-      source: 'meta',
-      created_at: createdIso,
-    });
-    return error ? 'error' : 'inserted';
+    const { data: inserted, error } = await sb
+      .from('leads')
+      .insert({
+        client_id: clientId,
+        campaign_id: campUuid,
+        ad_id: adUuid,
+        meta_lead_id: input.leadgen_id,
+        form_id: formId,
+        name,
+        phone,
+        email,
+        status: 'new',
+        source: 'meta',
+        created_at: createdIso,
+      })
+      .select('id')
+      .single();
+    if (error) return 'error';
+    // התראת push ללקוח (לא חוסם/מפיל את הקליטה)
+    await sendLeadPush(clientId, { id: inserted.id as string, name });
+    return 'inserted';
   } catch {
     return 'error';
   }
