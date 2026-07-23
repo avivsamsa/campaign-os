@@ -6,6 +6,7 @@ import LogoutButton from './LogoutButton';
 import DeleteAccountButton from './DeleteAccountButton';
 import ThemeToggle from '../ThemeToggle';
 import PortalTabbar from './PortalTabbar';
+import PortalNotifBell from './PortalNotifBell';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,8 +28,7 @@ export default async function PortalSlugLayout({
   const tabs = [
     { key: 'home', href: base, label: 'בית', exact: true },
     client.show_leads && { key: 'leads', href: `${base}/leads`, label: 'לידים' },
-    client.show_leads && { key: 'notifications', href: `${base}/notifications`, label: 'התראות' },
-    client.show_performance && { key: 'performance', href: `${base}/performance`, label: 'ביצועים' },
+    // התראות עברו לפעמון בפוטר (PortalNotifBell); ביצועים הוסתר כרגע.
     client.show_creatives && { key: 'creatives', href: `${base}/creatives`, label: 'קריאטיבים' },
   ].filter(Boolean) as { key: string; href: string; label: string; exact?: boolean }[];
 
@@ -44,6 +44,7 @@ export default async function PortalSlugLayout({
       </header>
       {authed && tabs.length > 0 && <PortalTabbar items={tabs} />}
       <main className="container portal-main">{children}</main>
+      {authed && <PortalNotifBell slug={params.slug} />}
     </div>
   );
 }
