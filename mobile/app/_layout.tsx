@@ -1,12 +1,12 @@
 import { I18nManager } from 'react-native';
-// עברית — RTL. מופעל פעם אחת; ב-Expo Go ייתכן שיידרש reload אחד בהרצה הראשונה.
-if (!I18nManager.isRTL) {
-  try {
-    I18nManager.allowRTL(true);
-    I18nManager.forceRTL(true);
-  } catch {
-    /* ignore */
-  }
+// עברית — RTL. swapLeftAndRightInRTL(false) => 'right'/'left'/textAlign נשארים פיזיים
+// (אחרת RN מחליף textAlign:'right' ל-left ב-RTL, וטקסט לטיני נצמד שמאלה).
+try {
+  I18nManager.allowRTL(true);
+  I18nManager.swapLeftAndRightInRTL(false);
+  if (!I18nManager.isRTL) I18nManager.forceRTL(true);
+} catch {
+  /* ignore */
 }
 
 import { Pressable } from 'react-native';
