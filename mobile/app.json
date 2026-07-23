@@ -2,7 +2,7 @@
   "expo": {
     "name": "AvivPPC",
     "slug": "campaign-os",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "scheme": "campaignos",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "il.co.avivsamsa.campaignos",
-      "buildNumber": "5",
+      "buildNumber": "6",
       "icon": "./assets/icon-ios.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
@@ -41,6 +41,12 @@
         "expo-audio",
         {
           "microphonePermission": false
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#A8325A"
         }
       ]
     ],

@@ -58,6 +58,8 @@ export const getStatuses = () =>
   get<{ statuses: CustomStatus[] }>('/api/portal/statuses').then((d) => d.statuses ?? []);
 export const addStatus = (label: string, color: string) =>
   send<{ status: CustomStatus }>('/api/portal/statuses', 'POST', { label, color });
+export const registerPushToken = (token: string, platform: string) =>
+  send<{ ok: boolean }>('/api/portal/push-token', 'POST', { token, platform });
 export const getNotes = (id: string) =>
   get<{ notes: Note[] }>(`/api/portal/leads/${id}/notes`).then((d) => d.notes ?? []);
 export const addNote = (id: string, body: string) =>
