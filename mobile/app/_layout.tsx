@@ -72,7 +72,7 @@ function ThemedApp() {
         <Stack.Screen name="leads" options={{ title: 'הלידים שלך' }} />
         <Stack.Screen name="lead/[id]" options={{ title: 'פרטי ליד' }} />
         <Stack.Screen name="notifications" options={{ title: 'התראות' }} />
-        <Stack.Screen name="settings" options={{ title: 'חשבון', animation: 'slide_from_right' }} />
+        <Stack.Screen name="settings" options={{ title: 'חשבון', animation: 'slide_from_left', fullScreenGestureEnabled: true }} />
       </Stack>
       <BrandSplash />
     </View>
