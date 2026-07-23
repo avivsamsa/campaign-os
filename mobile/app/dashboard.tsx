@@ -54,13 +54,8 @@ export default function Dashboard() {
       <Stack.Screen
         options={{
           title: clientName ?? dashboard?.client_name ?? 'הבית שלי',
-          // חשבון בצד שמאל (אייקון משתמש), התראות בצד ימין
+          // התראות בצד ימין, חשבון בצד שמאל
           headerLeft: () => (
-            <Pressable onPress={() => router.push('/settings')} hitSlop={12} accessibilityLabel="חשבון" style={s.iconBtn}>
-              <Feather name="user" size={22} color={c.text2} />
-            </Pressable>
-          ),
-          headerRight: () => (
             <Pressable onPress={() => router.push('/notifications')} hitSlop={12} accessibilityLabel="התראות" style={s.bellBtn}>
               <Feather name="bell" size={22} color={c.text2} />
               {newCount > 0 ? (
@@ -68,6 +63,11 @@ export default function Dashboard() {
                   <Text style={s.countText}>{newCount > 99 ? '99+' : newCount}</Text>
                 </View>
               ) : null}
+            </Pressable>
+          ),
+          headerRight: () => (
+            <Pressable onPress={() => router.push('/settings')} hitSlop={12} accessibilityLabel="חשבון" style={s.iconBtn}>
+              <Feather name="user" size={22} color={c.text2} />
             </Pressable>
           ),
         }}
