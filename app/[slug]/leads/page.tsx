@@ -6,7 +6,13 @@ import PortalLeadsManager from './PortalLeadsManager';
 
 export const dynamic = 'force-dynamic';
 
-export default async function PortalLeadsPage({ params }: { params: { slug: string } }) {
+export default async function PortalLeadsPage({
+  params,
+  searchParams,
+}: {
+  params: { slug: string };
+  searchParams: { category?: string };
+}) {
   const client = await getClientBySlug(params.slug);
   if (!client || !client.has_password) notFound();
 
@@ -27,7 +33,7 @@ export default async function PortalLeadsPage({ params }: { params: { slug: stri
 
   return (
     <>
-      <PortalLeadsManager initialLeads={leads} canEdit={client.show_leads} categories={categories} />
+      <PortalLeadsManager initialLeads={leads} canEdit={client.show_leads} categories={categories} initialCategory={searchParams.category ?? null} />
     </>
   );
 }

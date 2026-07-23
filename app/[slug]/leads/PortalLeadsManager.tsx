@@ -39,10 +39,12 @@ export default function PortalLeadsManager({
   initialLeads,
   canEdit,
   categories,
+  initialCategory,
 }: {
   initialLeads: EnrichedLead[];
   canEdit: boolean;
   categories: { id: string; name: string }[];
+  initialCategory?: string | null;
 }) {
   const router = useRouter();
   const [rows, setRows] = useState<Record<string, RowState>>(() =>
@@ -61,7 +63,8 @@ export default function PortalLeadsManager({
 
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  // קטגוריה מגיעה מהדשבורד (?category=...) → מדלגים על שער הבחירה
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(initialCategory ?? null);
 
   // רשימת הלידים בסטייט — כדי שלידים חדשים ייכנסו בזמן אמת (polling) בלי רענון.
   const [leads, setLeads] = useState<EnrichedLead[]>(initialLeads);
