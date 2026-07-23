@@ -86,6 +86,9 @@ export const statusLabel: Record<string, string> = {
 
 export const BUILTIN_STATUSES = Object.keys(statusLabel);
 
+// רוחב תוכן מקסימלי — ממרכז את התוכן ב-iPad כדי שלא יימתח (במסך טלפון: ללא השפעה).
+export const CONTENT_MAX = 680;
+
 // פלטת צבעים לסטטוסים מותאמים — תואם ל-lib/lead-statuses בצד השרת (color = שם).
 export const STATUS_COLORS: Record<string, string> = {
   blue: '#3b82f6',

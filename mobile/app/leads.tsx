@@ -16,7 +16,7 @@ import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Feather, FontAwesome } from '@expo/vector-icons';
 import { useData } from '../lib/data';
 import { useColors } from '../lib/theme-context';
-import { statusColor, statusLabel, formatPhone, customStatusHex, type Palette } from '../lib/theme';
+import { statusColor, statusLabel, formatPhone, customStatusHex, CONTENT_MAX, type Palette } from '../lib/theme';
 import { FadeIn } from '../lib/anim';
 import { StatusSheet } from '../components/StatusSheet';
 import type { Lead } from '../lib/api';
@@ -130,7 +130,7 @@ export default function Leads() {
       <FlatList
         data={filtered}
         keyExtractor={(l) => l.id}
-        contentContainerStyle={{ padding: 14, paddingTop: 6, gap: 10 }}
+        contentContainerStyle={{ padding: 14, paddingTop: 6, gap: 10, width: '100%', maxWidth: CONTENT_MAX, alignSelf: 'center' }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={<Text style={s.empty}>אין לידים תואמים.</Text>}
@@ -181,7 +181,7 @@ export default function Leads() {
 const makeStyles = (c: Palette) => StyleSheet.create({
   wrap: { flex: 1, backgroundColor: c.bg },
   center: { flex: 1, backgroundColor: c.bg, justifyContent: 'center', alignItems: 'center' },
-  header: { paddingHorizontal: 14, paddingTop: 10, gap: 10, borderBottomColor: c.border, borderBottomWidth: 1, paddingBottom: 10 },
+  header: { paddingHorizontal: 14, paddingTop: 10, gap: 10, borderBottomColor: c.border, borderBottomWidth: 1, paddingBottom: 10, width: '100%', maxWidth: CONTENT_MAX, alignSelf: 'center' },
   stats: { flexDirection: 'row', gap: 8 },
   stat: { flex: 1, backgroundColor: c.surface, borderColor: c.border, borderWidth: 1, borderRadius: 14, padding: 12, alignItems: 'center' },
   statFeature: { backgroundColor: c.primarySoft, borderColor: c.primary },

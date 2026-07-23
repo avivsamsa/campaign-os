@@ -234,7 +234,7 @@ export function StatusSheet({
 
 const makeStyles = (c: Palette) => StyleSheet.create({
   kav: { flex: 1, justifyContent: 'flex-end' },
-  sheet: { backgroundColor: c.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 34, gap: 14 },
+  sheet: { backgroundColor: c.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 34, gap: 14, width: '100%', maxWidth: 560, alignSelf: 'center' },
   handle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: c.borderStrong, marginBottom: 2 },
   title: { color: c.text, fontSize: 18, fontWeight: '800', textAlign: 'right' },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end' },

@@ -4,7 +4,7 @@ import { Stack, router, useFocusEffect } from 'expo-router';
 import { Feather, FontAwesome } from '@expo/vector-icons';
 import { useData } from '../lib/data';
 import { useColors } from '../lib/theme-context';
-import type { Palette } from '../lib/theme';
+import { CONTENT_MAX, type Palette } from '../lib/theme';
 import type { Lead, Message } from '../lib/api';
 import { FadeIn } from '../lib/anim';
 
@@ -65,7 +65,7 @@ export default function Notifications() {
       <FlatList
         data={items}
         keyExtractor={(it) => (it.kind === 'message' ? `m_${it.msg.id}` : `l_${it.lead.id}`)}
-        contentContainerStyle={{ paddingBottom: 24 }}
+        contentContainerStyle={{ paddingBottom: 24, width: '100%', maxWidth: CONTENT_MAX, alignSelf: 'center' }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
         ListHeaderComponent={items.length ? <Text style={s.sectionHead}>חדש</Text> : null}
         ListEmptyComponent={

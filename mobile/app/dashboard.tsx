@@ -5,7 +5,7 @@ import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../lib/auth';
 import { useData } from '../lib/data';
 import { useColors } from '../lib/theme-context';
-import type { Palette } from '../lib/theme';
+import { CONTENT_MAX, type Palette } from '../lib/theme';
 import { FadeIn, PressableScale } from '../lib/anim';
 
 const nf = new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 });
@@ -86,7 +86,7 @@ export default function Dashboard() {
       />
 
       <ScrollView
-        contentContainerStyle={{ padding: 20, paddingTop: 18 }}
+        contentContainerStyle={{ padding: 20, paddingTop: 18, width: '100%', maxWidth: CONTENT_MAX, alignSelf: 'center' }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
         showsVerticalScrollIndicator={false}
       >

@@ -13,7 +13,7 @@
       "backgroundColor": "#0E0C0B"
     },
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "il.co.avivsamsa.campaignos",
       "buildNumber": "5",
       "icon": "./assets/icon-ios.png",

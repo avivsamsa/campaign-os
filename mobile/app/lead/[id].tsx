@@ -23,7 +23,7 @@ import {
 } from '../../lib/api';
 import { useData } from '../../lib/data';
 import { useColors } from '../../lib/theme-context';
-import { BUILTIN_STATUSES, customStatusHex, formatPhone, statusColor, statusLabel, type Palette } from '../../lib/theme';
+import { BUILTIN_STATUSES, customStatusHex, formatPhone, statusColor, statusLabel, CONTENT_MAX, type Palette } from '../../lib/theme';
 
 const nf = new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 });
 const dt = (iso: string) =>
@@ -181,7 +181,7 @@ export default function LeadDetail() {
   }
 
   return (
-    <ScrollView style={s.wrap} contentContainerStyle={{ padding: 16, gap: 16 }} keyboardShouldPersistTaps="handled">
+    <ScrollView style={s.wrap} contentContainerStyle={{ padding: 16, gap: 16, width: '100%', maxWidth: CONTENT_MAX, alignSelf: 'center' }} keyboardShouldPersistTaps="handled">
       <View>
         <Text style={s.name}>{lead.name ?? 'ליד'}</Text>
         {lead.created_at ? <Text style={s.sub}>נכנס {dt(lead.created_at)}</Text> : null}
@@ -312,7 +312,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   noteTime: { color: c.muted2, fontSize: 12, textAlign: 'right' },
   noteBody: { color: c.text, fontSize: 15, textAlign: 'right', marginTop: 4 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 },
-  modal: { backgroundColor: c.surface, borderColor: c.border, borderWidth: 1, borderRadius: 18, padding: 18, gap: 12 },
+  modal: { backgroundColor: c.surface, borderColor: c.border, borderWidth: 1, borderRadius: 18, padding: 18, gap: 12, width: '100%', maxWidth: 460, alignSelf: 'center' },
   modalTitle: { color: c.text, fontSize: 18, fontWeight: '800', textAlign: 'right' },
   modalInput: { backgroundColor: c.surface2, borderColor: c.borderStrong, borderWidth: 1, borderRadius: 12, padding: 12, color: c.text, fontSize: 16, textAlign: 'right' },
   modalActions: { flexDirection: 'row', gap: 8 },

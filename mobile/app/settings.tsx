@@ -115,7 +115,7 @@ export default function Settings() {
 
 const makeStyles = (c: Palette) => StyleSheet.create({
   wrap: { flex: 1, backgroundColor: c.bg },
-  content: { padding: 16, gap: 18, flexGrow: 1, paddingBottom: 28 },
+  content: { padding: 16, gap: 18, flexGrow: 1, paddingBottom: 28, width: '100%', maxWidth: 520, alignSelf: 'center' },
   profile: { alignItems: 'center', gap: 12, paddingTop: 18, paddingBottom: 4 },
   avatar: { width: 72, height: 72, borderRadius: 36, backgroundColor: c.primarySoft, alignItems: 'center', justifyContent: 'center' },
   name: { color: c.text, fontSize: 24, fontWeight: '800', textAlign: 'center' },

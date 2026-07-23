@@ -111,11 +111,11 @@ export default function Login() {
 
 const makeStyles = (c: Palette) => StyleSheet.create({
   root: { flex: 1, backgroundColor: c.bg },
-  scroll: { flexGrow: 1, paddingHorizontal: 28, justifyContent: 'center' },
+  scroll: { flexGrow: 1, paddingHorizontal: 28, justifyContent: 'center', alignItems: 'center' },
   hero: { alignItems: 'center', marginBottom: 40 },
   logo: { width: 72, height: 72, borderRadius: 18, marginBottom: 18 },
   brand: { color: c.text, fontSize: 21, fontWeight: '800', letterSpacing: 3 },
-  form: { gap: 12 },
+  form: { gap: 12, width: '100%', maxWidth: 400 },
   input: {
     backgroundColor: c.surface,
     borderColor: c.border,
