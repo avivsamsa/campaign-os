@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { useColorScheme } from 'react-native';
+import { Appearance, useColorScheme } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { darkColors, lightColors, type Palette } from './theme';
 
@@ -39,6 +39,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setModeState(m);
     SecureStore.setItemAsync(MODE_KEY, m).catch(() => {});
   }
+
+  // מסנכרן את המראה הנייטיבי (iOS 26 glass header, מקלדת וכו') לבחירה שלנו —
+  // אחרת הזכוכית של ה-header עוקבת אחרי המערכת ונראית לבנה במצב כהה.
+  useEffect(() => {
+    try {
+      Appearance.setColorScheme(mode === 'system' ? null : mode);
+    } catch {
+      /* ignore */
+    }
+  }, [mode]);
 
   const scheme: 'light' | 'dark' = mode === 'system' ? (system === 'light' ? 'light' : 'dark') : mode;
   const colors = scheme === 'light' ? lightColors : darkColors;

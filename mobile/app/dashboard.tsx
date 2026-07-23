@@ -61,11 +61,11 @@ export default function Dashboard() {
             </Pressable>
           ),
           headerRight: () => (
-            <Pressable onPress={() => router.push('/notifications')} hitSlop={12} accessibilityLabel="התראות" style={s.bellWrap}>
+            <Pressable onPress={() => router.push('/notifications')} hitSlop={12} accessibilityLabel="התראות" style={s.bellBtn}>
               <Feather name="bell" size={22} color={c.text2} />
               {newCount > 0 ? (
-                <View style={s.badge}>
-                  <Text style={s.badgeText} numberOfLines={1}>{newCount > 99 ? '99+' : newCount}</Text>
+                <View style={s.countPill}>
+                  <Text style={s.countText}>{newCount > 99 ? '99+' : newCount}</Text>
                 </View>
               ) : null}
             </Pressable>
@@ -149,9 +149,9 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   wrap: { flex: 1, backgroundColor: c.bg },
   center: { flex: 1, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center' },
   iconBtn: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
-  bellWrap: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
-  badge: { position: 'absolute', top: 1, right: 1, backgroundColor: c.primary, minWidth: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4.5, borderWidth: 2, borderColor: c.bg },
-  badgeText: { color: '#fff', fontSize: 10.5, fontWeight: '800', lineHeight: 14, includeFontPadding: false, textAlign: 'center' },
+  bellBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 2, paddingVertical: 4 },
+  countPill: { backgroundColor: c.primary, minWidth: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
+  countText: { color: '#fff', fontSize: 12, fontWeight: '800', includeFontPadding: false },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   cardWrap: { width: '47%', flexGrow: 1 },
   card: { backgroundColor: c.surface, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, gap: 8, borderWidth: c.isDark ? 0 : 1, borderColor: c.border },
