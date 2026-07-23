@@ -1,10 +1,15 @@
 import { I18nManager } from 'react-native';
-// עברית — RTL. swapLeftAndRightInRTL(false) => 'right'/'left'/textAlign נשארים פיזיים
-// (אחרת RN מחליף textAlign:'right' ל-left ב-RTL, וטקסט לטיני נצמד שמאלה).
+import * as Updates from 'expo-updates';
+// כל ה-layout בנוי על בסיס LTR עם RTL ידני (rowDir / textAlign:'right' / chevron).
+// כשה-build הנייטיבי רץ במצב RTL (isRTL=true), מנוע ה-RTL + React Navigation מהפכים
+// לבד את מה שהקוד כבר הפך ידנית → הכל מתהפך פעמיים. לכן כופים LTR קבוע.
+// אם המכשיר התחיל ב-RTL, ההגדרה נכנסת לתוקף רק אחרי reload — אז טוענים מחדש פעם אחת.
 try {
-  I18nManager.allowRTL(true);
-  I18nManager.swapLeftAndRightInRTL(false);
-  if (!I18nManager.isRTL) I18nManager.forceRTL(true);
+  I18nManager.allowRTL(false);
+  if (I18nManager.isRTL) {
+    I18nManager.forceRTL(false);
+    Updates.reloadAsync().catch(() => {});
+  }
 } catch {
   /* ignore */
 }
