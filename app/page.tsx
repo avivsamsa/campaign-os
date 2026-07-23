@@ -5,15 +5,7 @@ import { useRouter } from 'next/navigation';
 
 export default function Landing() {
   const router = useRouter();
-  const [panel, setPanel] = useState<'none' | 'client' | 'agency'>('none');
-
-  // כניסת לקוח — לפי שם הפורטל (slug) → domain/<slug>
-  const [slug, setSlug] = useState('');
-  function goClient(e: React.FormEvent) {
-    e.preventDefault();
-    const s = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
-    if (s) router.push(`/${s}`);
-  }
+  const [panel, setPanel] = useState<'none' | 'agency'>('none');
 
   // טופס סוכנות מתעניינת
   const [form, setForm] = useState({ name: '', agency_name: '', email: '', phone: '', message: '' });
@@ -90,8 +82,8 @@ export default function Landing() {
       <div className="lp-actions">
         <button
           type="button"
-          className={`lp-btn primary ${panel === 'client' ? 'active' : ''}`.trim()}
-          onClick={() => setPanel(panel === 'client' ? 'none' : 'client')}
+          className="lp-btn primary"
+          onClick={() => router.push('/login')}
         >
           כניסת לקוחות
         </button>
@@ -103,24 +95,6 @@ export default function Landing() {
           סוכנות? דברו איתנו
         </button>
       </div>
-
-      {panel === 'client' && (
-        <form className="lp-panel" onSubmit={goClient}>
-          <h2>כניסת לקוחות</h2>
-          <p className="muted">הזן/י את שם הפורטל שלך כדי להיכנס.</p>
-          <div className="lp-row">
-            <input
-              className="input"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              placeholder="שם הפורטל (למשל: bigbagolan)"
-              autoFocus
-              dir="ltr"
-            />
-            <button className="lp-btn primary" type="submit" disabled={!slug.trim()}>כניסה</button>
-          </div>
-        </form>
-      )}
 
       {panel === 'agency' && (
         <form className="lp-panel" onSubmit={submitAgency}>
