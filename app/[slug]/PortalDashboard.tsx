@@ -45,7 +45,7 @@ export default function PortalDashboard({
   ];
 
   return (
-    <div className="pdash">
+    <div className="pdash enter-up">
       <style>{`
         .pdash { max-width: 760px; margin: 0 auto; }
         .pdash-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
@@ -58,10 +58,13 @@ export default function PortalDashboard({
         .pdash-card-value.accent { color: var(--primary); }
         .pdash-cta { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 18px; height: 52px; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--border); color: var(--text-2); font-size: 15px; font-weight: 700; text-decoration: none; transition: background .15s, border-color .15s; }
         .pdash-cta:hover { background: var(--surface-2); border-color: var(--border-strong); }
+        .pdash-cta:active { transform: scale(0.99); }
         .pdash-section { color: var(--text-2); font-size: 15px; font-weight: 700; text-align: center; margin: 28px 0 14px; }
         .pdash-cats { display: flex; flex-direction: column; gap: 12px; }
         .pdash-cat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 15px 16px; display: flex; flex-direction: column; gap: 13px; text-decoration: none; transition: border-color .15s, transform .1s; }
         .pdash-cat:hover { border-color: var(--border-strong); transform: translateY(-1px); }
+        /* משוב מיידי בלחיצה — לפני שהניווט מתחיל */
+        .pdash-cat:active { transform: scale(0.985); }
         .pdash-cat-top { display: flex; align-items: center; justify-content: space-between; }
         .pdash-cat-lead { display: flex; align-items: center; gap: 12px; }
         .pdash-cat-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--primary-soft); color: var(--primary); display: flex; align-items: center; justify-content: center; flex: none; }

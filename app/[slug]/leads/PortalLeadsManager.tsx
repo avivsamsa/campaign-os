@@ -380,7 +380,7 @@ export default function PortalLeadsManager({
   const waLink = (phone: string) => `https://wa.me/${phone.replace(/\D/g, '')}`;
 
   return (
-    <>
+    <div className="enter-up">
       {errMsg && <div className="banner-error">{errMsg}</div>}
 
       <div className="leads-head">
@@ -695,6 +695,6 @@ export default function PortalLeadsManager({
           onNotesCountChange={(id, c) => setNotesCounts((prev) => ({ ...prev, [id]: c }))}
         />
       )}
-    </>
+    </div>
   );
 }

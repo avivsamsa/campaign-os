@@ -2642,3 +2642,40 @@ body.portal-mode .app-main { margin-right: 0; }
 /* ----- כותרות טבלה לחיצות למיון ----- */
 .th-sort { cursor: pointer; user-select: none; white-space: nowrap; }
 .th-sort:hover { color: var(--primary); }
+
+/* ==========================================================================
+   מסכי שלד (loading.tsx) + כניסת תוכן
+   מוצגים מיידית בלחיצה כדי שהניווט ירגיש מיידי גם כשהשרת עוד טוען.
+   ========================================================================== */
+
+/* טקסט לקוראי מסך בלבד */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.skel-page { animation: skelFade 140ms var(--ease-out) both; }
+@keyframes skelFade { from { opacity: 0; } to { opacity: 1; } }
+
+/* פעימה עדינה — עובד זהה במצב בהיר וכהה, ומנפיש רק opacity */
+.skel {
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  animation: skelPulse 1.4s var(--ease) infinite;
+}
+@keyframes skelPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+.skel-row { height: 64px; border-radius: var(--radius-lg); margin-bottom: 10px; }
+.skel-card { height: 78px; border-radius: var(--radius-lg); }
+.skel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+
+/* כניסת תוכן אמיתי — עדין, מ-8px למטה */
+.enter-up { animation: enterUp 260ms var(--ease-out) both; }
+@keyframes enterUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skel, .skel-page, .enter-up { animation: none; }
+}
