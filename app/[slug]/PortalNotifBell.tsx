@@ -121,7 +121,8 @@ export default function PortalNotifBell({ slug }: { slug: string }) {
         .pnbell-av.msg { background: var(--primary-soft); border: none; color: var(--primary); }
         .pnbell-av-txt { color: var(--text-2); font-size: 16px; font-weight: 800; }
         .pnbell-av-badge { position: absolute; bottom: -2px; inset-inline-start: -2px; width: 20px; height: 20px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; border: 2px solid var(--surface); }
-        .pnbell-body { flex: 1; min-width: 0; }
+        /* עמודה — אחרת ה-span-ים נשארים inline והשם/התיאור/הזמן נדבקים לשורה אחת */
+        .pnbell-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
         .pnbell-title { color: var(--text); font-weight: 800; font-size: 14.5px; text-align: right; }
         .pnbell-sub { color: var(--text-2); font-size: 13px; text-align: right; margin-top: 2px; line-height: 1.35; }
         .pnbell-meta { color: var(--muted); font-size: 12px; text-align: right; margin-top: 2px; }
