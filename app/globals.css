@@ -1175,7 +1175,10 @@ body.portal-mode .app-main { margin-right: 0; }
    Portal (client-facing) shell
    ========================================================================== */
 
-.portal-shell { min-height: 100vh; background: var(--bg); overflow-x: clip; }
+/* בלי overflow-x כאן: זה הופך את המעטפת ל-containing block ו"כולא" אלמנטים
+   position:fixed (וילון ההתראות). הגלילה האופקית נפתרה בשורש — תפריט החשבון
+   מעוגן inset-inline-end עם max-width, כך שהוא לא חורג מהמסך. */
+.portal-shell { min-height: 100vh; background: var(--bg); }
 .portal-header {
   position: sticky;
   top: 0;
