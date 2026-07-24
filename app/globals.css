@@ -2682,3 +2682,66 @@ body.portal-mode .app-main { margin-right: 0; }
 @media (prefers-reduced-motion: reduce) {
   .skel, .skel-page, .enter-up { animation: none; }
 }
+
+/* ==========================================================================
+   Portal sidebar (דסקטופ ≥900px)
+   העטיפה .portal-side היא display:contents כברירת מחדל — כלומר במובייל
+   ובטאבלט האדר והטאבים מתנהגים בדיוק כמו קודם (טאבים = בר תחתון קבוע).
+   מ-900px היא הופכת לסרגל צד ימני עם מותג + פעמון/חשבון + ניווט אנכי.
+   ========================================================================== */
+.portal-side { display: contents; }
+
+@media (min-width: 900px) {
+  :root { --portal-side-w: 264px; }
+
+  .portal-side {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    /* RTL: inline-start = ימין. הסרגל בצד ימין, הגבול בקצה השמאלי שלו. */
+    inset-inline-start: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--portal-side-w);
+    background: var(--surface);
+    border-inline-end: 1px solid var(--border);
+    z-index: 20;
+  }
+
+  /* החלק העליון של הסרגל — מותג + פעמון/חשבון, אחד מעל השני */
+  .portal-side .portal-header {
+    position: static;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.9rem;
+    padding: 1.25rem 1rem;
+    background: transparent;
+    /* בלי blur: הוא יוצר containing block ל-position:fixed */
+    backdrop-filter: none;
+    box-shadow: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .portal-side .portal-brand { font-size: 1rem; }
+  .portal-side .portal-header-actions { justify-content: flex-start; }
+
+  /* הניווט — אנכי, פריט מלא לרוחב */
+  .portal-side .portal-tabbar {
+    position: static;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+    padding: 0.75rem;
+    background: transparent;
+    border-bottom: none;
+    top: auto;
+  }
+  .portal-side .tabbar-item {
+    justify-content: flex-start;
+    padding: 0.7rem 0.85rem;
+    font-size: 0.95rem;
+  }
+  .portal-side .tabbar-item.active { box-shadow: none; }
+
+  /* התוכן מפנה מקום לסרגל */
+  .portal-main { margin-inline-start: var(--portal-side-w); }
+}

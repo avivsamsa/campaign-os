@@ -32,20 +32,24 @@ export default async function PortalSlugLayout({
 
   return (
     <div className="portal-shell">
-      <header className="portal-header">
-        <div className="portal-brand">פורטל — {client.name}</div>
-        <div className="portal-header-actions">
-          {authed ? (
-            <>
-              <PortalNotifBell slug={params.slug} />
-              <PortalAccountMenu slug={params.slug} />
-            </>
-          ) : (
-            <ThemeToggle />
-          )}
-        </div>
-      </header>
-      {authed && tabs.length > 0 && <PortalTabbar items={tabs} />}
+      {/* עטיפה אחת: במובייל היא display:contents (האדר עליון + טאבים תחתונים,
+          בדיוק כמו קודם), ובדסקטופ היא הופכת לסרגל צד. אין שכפול קומפוננטות. */}
+      <aside className="portal-side">
+        <header className="portal-header">
+          <div className="portal-brand">פורטל — {client.name}</div>
+          <div className="portal-header-actions">
+            {authed ? (
+              <>
+                <PortalNotifBell slug={params.slug} />
+                <PortalAccountMenu slug={params.slug} />
+              </>
+            ) : (
+              <ThemeToggle />
+            )}
+          </div>
+        </header>
+        {authed && tabs.length > 0 && <PortalTabbar items={tabs} />}
+      </aside>
       <main className="container portal-main">{children}</main>
     </div>
   );
