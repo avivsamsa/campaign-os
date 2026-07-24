@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getClientBySlug, resolvePortalSession } from '@/lib/portal-session';
+import { getClientBySlug, isAuthedForClient } from '@/lib/portal-session';
 import { computePortalDashboard } from '@/lib/portal-dashboard';
 import PortalLogin from './PortalLogin';
 import PortalDashboard from './PortalDashboard';
@@ -11,8 +11,7 @@ export default async function PortalSlugHome({ params }: { params: { slug: strin
   const client = await getClientBySlug(params.slug);
   if (!client || !client.has_password) notFound();
 
-  const session = await resolvePortalSession();
-  const authed = !!session && session.id === client.id;
+  const authed = isAuthedForClient(client.id);
 
   if (!authed) {
     return <PortalLogin slug={params.slug} clientName={client.name} />;

@@ -1,5 +1,5 @@
 import { notFound, redirect } from 'next/navigation';
-import { getClientBySlug, resolvePortalSession } from '@/lib/portal-session';
+import { getClientBySlug, isAuthedForClient } from '@/lib/portal-session';
 import { getSupabaseClient } from '@/lib/supabase';
 import { fetchClientLeads } from '@/lib/leads';
 import PortalNotifications from './PortalNotifications';
@@ -10,8 +10,7 @@ export default async function PortalNotificationsPage({ params }: { params: { sl
   const client = await getClientBySlug(params.slug);
   if (!client || !client.has_password) notFound();
 
-  const session = await resolvePortalSession();
-  if (!session || session.id !== client.id) redirect(`/${params.slug}`);
+  if (!isAuthedForClient(client.id)) redirect(`/${params.slug}`);
 
   const leads = await fetchClientLeads(client.id, { heavy: false });
   const sb = getSupabaseClient();

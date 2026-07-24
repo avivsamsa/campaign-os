@@ -38,12 +38,12 @@ export default function PortalNotifBell({ slug }: { slug: string }) {
 
   const load = useCallback(async () => {
     try {
-      const [leadsRes, msgsRes] = (await Promise.all([
-        fetch('/api/portal/leads').then((r) => (r.ok ? r.json() : {})).catch(() => ({})),
-        fetch('/api/portal/messages').then((r) => (r.ok ? r.json() : {})).catch(() => ({})),
-      ])) as [any, any];
-      const leads = (leadsRes.leads ?? []).filter((l: { status: string }) => l.status === 'new');
-      const msgs = msgsRes.messages ?? [];
+      // endpoint אחד קל במקום שתי בקשות כבדות
+      const res = (await fetch('/api/portal/notifs')
+        .then((r) => (r.ok ? r.json() : {}))
+        .catch(() => ({}))) as any;
+      const leads = res.leads ?? [];
+      const msgs = res.messages ?? [];
       const merged: Item[] = [
         ...msgs.map((m: { id: string; title: string; body: string; created_at: string }) => ({
           kind: 'message' as const, at: new Date(m.created_at).getTime(), id: m.id, title: m.title, body: m.body, created_at: m.created_at,
@@ -63,7 +63,7 @@ export default function PortalNotifBell({ slug }: { slug: string }) {
     load();
     const iv = setInterval(() => {
       if (document.visibilityState === 'visible') load();
-    }, 20000);
+    }, 60000);
     return () => clearInterval(iv);
   }, [load]);
 

@@ -9,7 +9,6 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { LEAD_STATUSES, formatPhone, type EnrichedLead } from '@/lib/leads';
 import {
   STATUS_COLORS,
@@ -46,7 +45,6 @@ export default function PortalLeadsManager({
   categories: { id: string; name: string }[];
   initialCategory?: string | null;
 }) {
-  const router = useRouter();
   const [rows, setRows] = useState<Record<string, RowState>>(() =>
     Object.fromEntries(
       initialLeads.map((l) => [
@@ -70,7 +68,7 @@ export default function PortalLeadsManager({
   const [leads, setLeads] = useState<EnrichedLead[]>(initialLeads);
   const leadsRef = useRef(initialLeads);
   useEffect(() => { leadsRef.current = leads; }, [leads]);
-  // סנכרון עם רענון-שרת (router.refresh לאחר עריכה) — מקור אמת מלא
+  // סנכרון כשה-props מהשרת מתחדשים (ניווט/כניסה מחדש)
   useEffect(() => { setLeads(initialLeads); }, [initialLeads]);
   // ids של לידים שזה עתה נכנסו — להדגשה/אנימציה
   const [newIds, setNewIds] = useState<Set<string>>(() => new Set());
@@ -95,7 +93,7 @@ export default function PortalLeadsManager({
     });
   }, [leads]);
 
-  // Polling — לידים חדשים (webhook/סנכרון) נכנסים לבד כל 10 שניות, עם אנימציה
+  // Polling — לידים חדשים (webhook/סנכרון) נכנסים לבד כל 30 שניות, עם אנימציה
   useEffect(() => {
     let alive = true;
     async function poll() {
@@ -132,7 +130,7 @@ export default function PortalLeadsManager({
         /* שקט — הפולינג הבא ינסה שוב */
       }
     }
-    const iv = setInterval(poll, 10000);
+    const iv = setInterval(poll, 30000);
     return () => {
       alive = false;
       clearInterval(iv);
@@ -350,8 +348,9 @@ export default function PortalLeadsManager({
         setRow(id, { saving: false });
         return;
       }
+      // בלי router.refresh() — המצב כבר עודכן אופטימית וה-poll מסנכרן מול השרת.
+      // רענון שרת כאן היה מריץ רינדור מלא + שליפת כל הלידים מחדש בכל שמירה.
       setRow(id, { saving: false, saved: true });
-      router.refresh();
     } catch (err) {
       setErrMsg(err instanceof Error ? err.message : String(err));
       setRow(id, { saving: false });

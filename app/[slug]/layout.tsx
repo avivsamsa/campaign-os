@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getClientBySlug, resolvePortalSession } from '@/lib/portal-session';
+import { getClientBySlug, isAuthedForClient } from '@/lib/portal-session';
 import ThemeToggle from '../ThemeToggle';
 import PortalTabbar from './PortalTabbar';
 import PortalNotifBell from './PortalNotifBell';
@@ -20,8 +20,7 @@ export default async function PortalSlugLayout({
   const client = await getClientBySlug(params.slug);
   if (!client || !client.has_password) notFound();
 
-  const session = await resolvePortalSession();
-  const authed = !!session && session.id === client.id;
+  const authed = isAuthedForClient(client.id);
   const base = `/${params.slug}`;
 
   const tabs = [
