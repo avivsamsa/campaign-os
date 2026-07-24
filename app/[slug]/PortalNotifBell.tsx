@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 
 type Item =
@@ -29,6 +30,10 @@ export default function PortalNotifBell({ slug }: { slug: string }) {
   const [items, setItems] = useState<Item[]>([]);
   const [msgSeen, setMsgSeen] = useState(0);
   const [now, setNow] = useState(0);
+  // הווילון מרונדר ב-portal ל-body: ההאדר משתמש ב-backdrop-filter, שהופך אותו
+  // ל-containing block ל-position:fixed — בלי ה-portal הווילון נכלא לגובה ההאדר.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     setNow(Date.now());
@@ -128,6 +133,7 @@ export default function PortalNotifBell({ slug }: { slug: string }) {
         {unread > 0 && <span className="pnbell-badge">{unread}</span>}
       </button>
 
+      {mounted && createPortal(
       <div className={`pnbell-overlay ${open ? 'open' : ''}`.trim()} onClick={() => setOpen(false)} aria-hidden={!open}>
         <aside className={`pnbell-drawer ${open ? 'open' : ''}`.trim()} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="התראות">
           <div className="pnbell-head">
@@ -171,7 +177,9 @@ export default function PortalNotifBell({ slug }: { slug: string }) {
             )}
           </div>
         </aside>
-      </div>
+      </div>,
+      document.body,
+      )}
     </>
   );
 }
