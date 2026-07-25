@@ -2777,3 +2777,81 @@ body.portal-mode .app-main { margin-right: 0; }
   /* התוכן מפנה מקום לסרגל */
   .portal-main { margin-inline-start: var(--portal-side-w); }
 }
+
+/* ==========================================================================
+   Leads: מתג תצוגה + תצוגת טבלה (Excel) — דסקטופ בלבד (≥900px)
+   במובייל תמיד כרטיסים: המתג מוסתר והטבלה לא מוצגת גם אם המצב "table".
+   ========================================================================== */
+.leads-viewtoggle { display: none; }
+.lead-table-wrap { display: none; }
+
+@media (min-width: 900px) {
+  .leads-viewtoggle {
+    display: inline-flex;
+    gap: 3px;
+    margin-inline-start: auto;      /* דוחף לקצה (שמאל ב-RTL) */
+    margin-bottom: 14px;
+    width: fit-content;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 3px;
+  }
+  .leads-viewtoggle button {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 6px 12px; height: 34px;
+    border: none; background: none; cursor: pointer;
+    color: var(--muted); font-size: 13.5px; font-weight: 650;
+    border-radius: calc(var(--radius) - 3px);
+    transition: background var(--duration) var(--ease), color var(--duration) var(--ease);
+  }
+  .leads-viewtoggle button:hover { color: var(--text); }
+  .leads-viewtoggle button.active { background: var(--primary-soft); color: var(--primary); }
+  .leads-viewtoggle button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+  /* החלפת התצוגה */
+  .leads-body[data-view="table"] .lead-list { display: none; }
+  .leads-body[data-view="table"] .lead-table-wrap { display: block; }
+
+  .lead-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-xs);
+  }
+  .lead-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .lead-table th, .lead-table td {
+    padding: 12px 16px; text-align: right; white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+  }
+  .lead-table thead th {
+    position: sticky; top: 0; z-index: 1;
+    background: var(--surface-2); color: var(--muted);
+    font-weight: 700; font-size: 12.5px;
+  }
+  .lead-table tbody tr { cursor: pointer; transition: background var(--duration) var(--ease); }
+  .lead-table tbody tr:hover { background: var(--surface-2); }
+  .lead-table tbody tr:last-child td { border-bottom: none; }
+
+  .lead-table .lt-name { font-weight: 750; color: var(--text); }
+  .lead-table .lt-cat, .lead-table .lt-notes { color: var(--text-2); }
+  .lead-table .lt-date { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .lead-table .lt-deal { color: var(--text-2); font-variant-numeric: tabular-nums; }
+  .lead-table .lt-deal.won { color: var(--primary); font-weight: 750; }
+
+  .lead-table .lt-phone-in { display: inline-flex; align-items: center; gap: 8px; }
+  .lead-table .lt-phone-num { color: var(--text-2); font-variant-numeric: tabular-nums; }
+  .lead-table .lt-phone .row-act { width: 28px; height: 28px; }
+
+  /* pill הסטטוס בתוך התא — שומר על העריכה (select שקוף מעליו) */
+  .lead-table .lt-status .status-chip { cursor: pointer; }
+
+  /* שורת ליד חדש — הבהוב עדין (כמו בכרטיסים) */
+  .lead-table tbody tr.lead-row-new { animation: leadIn 0.65s var(--ease-out) both; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lead-table tbody tr.lead-row-new { animation: none; }
+}

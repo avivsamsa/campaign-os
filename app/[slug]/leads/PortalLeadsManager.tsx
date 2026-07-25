@@ -64,6 +64,20 @@ export default function PortalLeadsManager({
   // קטגוריה מגיעה מהדשבורד (?category=...) → מדלגים על שער הבחירה
   const [selectedCategory, setSelectedCategory] = useState<string | null>(initialCategory ?? null);
 
+  // תצוגה: כרטיסים / טבלה (Excel) — דסקטופ בלבד. נטען מ-localStorage אחרי mount
+  // (לא ב-initial state כדי לא לשבור hydration). במובייל תמיד כרטיסים (נאכף ב-CSS).
+  const [view, setView] = useState<'cards' | 'table'>('cards');
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem('portal_leads_view');
+      if (v === 'table' || v === 'cards') setView(v);
+    } catch { /* ignore */ }
+  }, []);
+  const changeView = (v: 'cards' | 'table') => {
+    setView(v);
+    try { localStorage.setItem('portal_leads_view', v); } catch { /* ignore */ }
+  };
+
   // רשימת הלידים בסטייט — כדי שלידים חדשים ייכנסו בזמן אמת (polling) בלי רענון.
   const [leads, setLeads] = useState<EnrichedLead[]>(initialLeads);
   const leadsRef = useRef(initialLeads);
@@ -452,6 +466,30 @@ export default function PortalLeadsManager({
               </button>
             )}
           </div>
+
+          {/* מתג תצוגה (דסקטופ בלבד): כרטיסים / טבלה */}
+          <div className="leads-viewtoggle" role="group" aria-label="תצוגת לידים">
+            <button
+              type="button"
+              className={view === 'cards' ? 'active' : ''}
+              aria-pressed={view === 'cards'}
+              onClick={() => changeView('cards')}
+              title="תצוגת כרטיסים"
+            >
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="5" rx="1.5" /><rect x="3" y="11" width="18" height="5" rx="1.5" /><rect x="3" y="18" width="18" height="2.5" rx="1" /></svg>
+              <span>כרטיסים</span>
+            </button>
+            <button
+              type="button"
+              className={view === 'table' ? 'active' : ''}
+              aria-pressed={view === 'table'}
+              onClick={() => changeView('table')}
+              title="תצוגת טבלה"
+            >
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5" /><path d="M3 9h18M3 14h18M9 4v16M15 4v16" /></svg>
+              <span>טבלה</span>
+            </button>
+          </div>
         </>
       )}
 
@@ -460,6 +498,7 @@ export default function PortalLeadsManager({
       {categoryLeads.length > 0 && filteredLeads.length === 0 ? (
         <div className="card muted">אין לידים התואמים את הסינון.</div>
       ) : categoryLeads.length > 0 ? (
+        <div className="leads-body" data-view={view}>
         <div className="lead-list">
           {filteredLeads.map((l) => {
             const r = rows[l.id];
@@ -538,6 +577,76 @@ export default function PortalLeadsManager({
               </div>
             );
           })}
+        </div>
+
+        {view === 'table' && (
+          <div className="lead-table-wrap">
+            <table className="lead-table">
+              <thead>
+                <tr>
+                  <th>שם</th>
+                  <th>טלפון</th>
+                  <th>קטגוריה</th>
+                  <th>נכנס</th>
+                  <th>סטטוס</th>
+                  <th>סכום</th>
+                  <th>הערות</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredLeads.map((l) => {
+                  const r = rows[l.id];
+                  if (!r) return null;
+                  const d = l.created_at ? new Date(l.created_at) : null;
+                  const isClosed = r.status === 'closed';
+                  const builtin = !customById.get(r.status);
+                  return (
+                    <tr
+                      key={l.id}
+                      className={`${newIds.has(l.id) ? 'lead-row-new' : ''}`.trim()}
+                      onClick={() => setSelected(l)}
+                    >
+                      <td className="lt-name">{l.name ?? '—'}</td>
+                      <td className="lt-phone" onClick={(e) => e.stopPropagation()}>
+                        {l.phone ? (
+                          <div className="lt-phone-in">
+                            <span className="lt-phone-num" dir="ltr">{formatPhone(l.phone)}</span>
+                            <a className="row-act call" href={`tel:${l.phone}`} aria-label="חיוג" title="חיוג">
+                              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2 4.2 2 2 0 0 1 4 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.5 2.1L8 9.6a16 16 0 0 0 6 6l1.2-1.1a2 2 0 0 1 2.1-.5c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2z"/></svg>
+                            </a>
+                            <a className="row-act wa" href={waLink(l.phone)} target="_blank" rel="noopener noreferrer" aria-label="וואטסאפ" title="וואטסאפ">
+                              <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 00-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1012 2zm0 18a8 8 0 01-4.1-1.1l-.3-.2-2.8.8.8-2.8-.2-.3A8 8 0 1112 20zm4.4-6c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1-.2.2-.6.8-.8.9-.1.2-.3.2-.5.1-1.3-.5-2.1-1.2-2.9-2.6-.2-.4.2-.4.6-1.1.1-.2 0-.3 0-.5s-.5-1.3-.7-1.7c-.2-.4-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.7.8-.9 1.7-.6 2.8.4 1.4 1.3 2.6 2.9 3.7 2.2 1.5 2.2 1 2.6 1 .5 0 1.4-.6 1.6-1.1.2-.5.2-1 .1-1.1z"/></svg>
+                            </a>
+                          </div>
+                        ) : '—'}
+                      </td>
+                      <td className="lt-cat">{l.category_name ?? '—'}</td>
+                      <td className="lt-date" dir="ltr">
+                        {d
+                          ? `${d.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' })} ${d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}`
+                          : '—'}
+                      </td>
+                      <td className="lt-status" onClick={(e) => e.stopPropagation()}>
+                        <span className={`status-chip ${builtin ? `status-${r.status}` : ''}`.trim()} style={builtin ? undefined : pillStyle(r.status)}>
+                          {statusLabel(r.status)}
+                          {canEdit && (
+                            <select className="status-overlay" value={r.status} onChange={(e) => onStatusChange(l, e.target.value)} aria-label="שינוי סטטוס">
+                              {statusOptions.map((s) => (<option key={s.key} value={s.key}>{s.label}</option>))}
+                            </select>
+                          )}
+                        </span>
+                      </td>
+                      <td className={`lt-deal ${isClosed && r.deal_value ? 'won' : ''}`.trim()}>
+                        {isClosed && r.deal_value ? `₪${nfIls.format(Number(r.deal_value))}` : '—'}
+                      </td>
+                      <td className="lt-notes">{getCount(l) > 0 ? getCount(l) : '—'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
         </div>
       ) : null}
 
