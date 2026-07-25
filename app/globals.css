@@ -1461,7 +1461,9 @@ body.portal-mode .app-main { margin-right: 0; }
 .row-act:hover { filter: brightness(0.92); text-decoration: none; }
 /* status tag inside a row (image 1 look) — small colored chip, with an invisible
    native select overlaid so tapping it opens the status dropdown. */
-.lead-row-status { position: relative; flex: none; cursor: pointer; }
+/* overflow:hidden גוזר את שטח הלחיצה של ה-<select> השקוף בדיוק ל-pill (חוסם
+   באג ב-Safari שבו ה-select גלש וחסם את החיפוש/המתג). */
+.lead-row-status { position: relative; flex: none; cursor: pointer; overflow: hidden; }
 .status-overlay {
   position: absolute;
   inset: 0;
@@ -2673,7 +2675,9 @@ body.portal-mode .app-main { margin-right: 0; }
 .skel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
 
 /* כניסת תוכן אמיתי — עדין, מ-8px למטה */
-.enter-up { animation: enterUp 260ms var(--ease-out) both; }
+/* backwards (ולא both): מונע הבהוב בכניסה אבל לא משאיר transform זהותי אחרי הסיום
+   — transform תקוע היה הופך את .enter-up ל-containing block לכל צאצאי absolute/fixed. */
+.enter-up { animation: enterUp 260ms var(--ease-out) backwards; }
 @keyframes enterUp {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: none; }
@@ -2856,7 +2860,7 @@ body.portal-mode .app-main { margin-right: 0; }
 
   /* pill הסטטוס בתוך התא — position:relative כדי שה-select השקוף (inset:0) יוגבל
      לתוך ה-pill ולא יגלוש ויחסום כפתורים אחרים (למשל מתג התצוגה). */
-  .lead-table .lt-status .status-chip { position: relative; cursor: pointer; }
+  .lead-table .lt-status .status-chip { position: relative; overflow: hidden; cursor: pointer; }
 
   /* שורת ליד חדש — הבהוב עדין (כמו בכרטיסים) */
   .lead-table tbody tr.lead-row-new { animation: leadIn 0.65s var(--ease-out) both; }
