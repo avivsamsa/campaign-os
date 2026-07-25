@@ -2692,7 +2692,7 @@ body.portal-mode .app-main { margin-right: 0; }
 .portal-side { display: contents; }
 
 @media (min-width: 900px) {
-  :root { --portal-side-w: 264px; }
+  :root { --portal-side-w: 272px; }
 
   .portal-side {
     display: flex;
@@ -2706,41 +2706,73 @@ body.portal-mode .app-main { margin-right: 0; }
     background: var(--surface);
     border-inline-end: 1px solid var(--border);
     z-index: 20;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
-  /* החלק העליון של הסרגל — מותג + פעמון/חשבון, אחד מעל השני */
+  /* ---- אזור המותג + פעולות (פעמון/חשבון) ---- */
   .portal-side .portal-header {
     position: static;
     flex-direction: column;
     align-items: stretch;
-    gap: 0.9rem;
-    padding: 1.25rem 1rem;
+    gap: 1.1rem;
+    padding: 1.5rem 1.15rem 1.15rem;
     background: transparent;
     /* בלי blur: הוא יוצר containing block ל-position:fixed */
     backdrop-filter: none;
     box-shadow: none;
     border-bottom: 1px solid var(--border);
   }
-  .portal-side .portal-brand { font-size: 1rem; }
-  .portal-side .portal-header-actions { justify-content: flex-start; }
+  .portal-side .portal-brand { font-size: 1.05rem; font-weight: 750; line-height: 1.3; }
+  .portal-side .portal-brand::before { width: 26px; height: 26px; border-radius: 8px; }
+  .portal-side .portal-header-actions { justify-content: flex-start; gap: 0.55rem; }
 
-  /* הניווט — אנכי, פריט מלא לרוחב */
+  /* ---- ניווט אנכי ---- */
   .portal-side .portal-tabbar {
     position: static;
     flex-direction: column;
     align-items: stretch;
-    gap: 0.25rem;
-    padding: 0.75rem;
+    gap: 0.15rem;
+    padding: 0.85rem 0.7rem;
     background: transparent;
     border-bottom: none;
     top: auto;
   }
   .portal-side .tabbar-item {
+    position: relative;
     justify-content: flex-start;
-    padding: 0.7rem 0.85rem;
+    gap: 0.7rem;
+    padding: 0.66rem 0.8rem;
     font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: var(--radius);
+    color: var(--text-2);
+    transition: background var(--duration) var(--ease), color var(--duration) var(--ease);
   }
-  .portal-side .tabbar-item.active { box-shadow: none; }
+  .portal-side .tabbar-icon svg { width: 19px; height: 19px; }
+  .portal-side .tabbar-item:hover { background: var(--surface-2); color: var(--text); }
+  .portal-side .tabbar-item.active {
+    background: var(--primary-soft);
+    color: var(--primary);
+    box-shadow: none;
+  }
+  /* אינדיקציה עדינה של הפריט הפעיל — פס מעוגן בקצה הפנימי (לכיוון התוכן) */
+  .portal-side .tabbar-item.active::before {
+    content: '';
+    position: absolute;
+    inset-inline-end: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 58%;
+    border-radius: 999px;
+    background: var(--primary);
+  }
+  /* נגישות — טבעת פוקוס ברורה (focus-states) */
+  .portal-side .tabbar-item:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
 
   /* התוכן מפנה מקום לסרגל */
   .portal-main { margin-inline-start: var(--portal-side-w); }
