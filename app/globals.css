@@ -2847,15 +2847,24 @@ body.portal-mode .app-main { margin-right: 0; }
   .lead-table .lt-deal { color: var(--text-2); font-variant-numeric: tabular-nums; }
   .lead-table .lt-deal.won { color: var(--primary); font-weight: 750; }
 
-  /* תיעוד אחרון — חיתוך לשורה אחת עם ellipsis, טקסט מלא ב-title/tooltip */
-  .lead-table .lt-note { max-width: 300px; }
-  .lead-table .lt-note-txt {
-    display: block; max-width: 300px;
-    color: var(--text-2);
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  /* תיעוד אחרון — תא לחיץ/עריך: pill עם אייקון, חיתוך לשורה אחת (מלא ב-tooltip) */
+  .lead-table .lt-note { max-width: 320px; cursor: pointer; }
+  .lead-table .lt-note-txt,
+  .lead-table .lt-note-add {
+    display: inline-flex; align-items: center; gap: 6px;
+    max-width: 300px; padding: 4px 9px; margin: -4px -9px;
+    border-radius: var(--radius-sm);
+    white-space: nowrap; overflow: hidden;
+    transition: background var(--duration) var(--ease), color var(--duration) var(--ease);
   }
-  .lead-table .lt-note-add { color: var(--muted-2); font-size: 13px; font-weight: 600; }
-  .lead-table tbody tr:hover .lt-note-add { color: var(--primary); }
+  .lead-table .lt-note-txt { color: var(--text-2); }
+  .lead-table .lt-note-body { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lead-table .lt-note-ic { flex: none; opacity: 0.55; }
+  .lead-table .lt-note-add { color: var(--primary); font-size: 13px; font-weight: 650; }
+  /* hover — התא נראה כמו שדה עריכה לחיץ */
+  .lead-table tbody tr:hover .lt-note-txt,
+  .lead-table tbody tr:hover .lt-note-add { background: var(--primary-soft); color: var(--primary); }
+  .lead-table tbody tr:hover .lt-note-ic { opacity: 1; }
 
   .lead-table .lt-phone-in { display: inline-flex; align-items: center; gap: 8px; }
   .lead-table .lt-phone-num { color: var(--text-2); font-variant-numeric: tabular-nums; }

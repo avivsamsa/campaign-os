@@ -637,11 +637,17 @@ export default function PortalLeadsManager({
                           )}
                         </span>
                       </td>
-                      <td className="lt-note" onClick={() => setSelected(l)} title={l.last_note ?? undefined}>
+                      <td className="lt-note" onClick={() => setSelected(l)} title={l.last_note ?? 'הוסף תיעוד'}>
                         {l.last_note ? (
-                          <span className="lt-note-txt">{l.last_note}</span>
+                          <span className="lt-note-txt">
+                            <svg className="lt-note-ic" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></svg>
+                            <span className="lt-note-body">{l.last_note}</span>
+                          </span>
                         ) : (
-                          <span className="lt-note-add">+ הוסף תיעוד</span>
+                          <span className="lt-note-add">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                            הוסף תיעוד
+                          </span>
                         )}
                       </td>
                       <td className={`lt-deal ${isClosed && r.deal_value ? 'won' : ''}`.trim()}>
@@ -810,6 +816,9 @@ export default function PortalLeadsManager({
           onEditAmount={() => setAmountModal({ lead: selected, value: rows[selected.id].deal_value || '' })}
           onClose={() => setSelected(null)}
           onNotesCountChange={(id, c) => setNotesCounts((prev) => ({ ...prev, [id]: c }))}
+          onLastNoteChange={(id, note, at) =>
+            setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, last_note: note, last_note_at: at } : l)))
+          }
         />
       )}
     </div>

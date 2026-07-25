@@ -47,6 +47,7 @@ export default function LeadDrawer({
   onEditAmount,
   onClose,
   onNotesCountChange,
+  onLastNoteChange,
 }: {
   lead: EnrichedLead;
   statusKey: string;
@@ -61,6 +62,7 @@ export default function LeadDrawer({
   onEditAmount: () => void;
   onClose: () => void;
   onNotesCountChange: (leadId: string, count: number) => void;
+  onLastNoteChange?: (leadId: string, body: string, at: string) => void;
 }) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,6 +104,9 @@ export default function LeadDrawer({
         const next = [d.note as Note, ...notes];
         setNotes(next);
         onNotesCountChange(lead.id, next.filter(isManual).length);
+        // עדכון "תיעוד אחרון" בטבלה מיד (בלי רענון)
+        const added = d.note as Note;
+        if (added?.body) onLastNoteChange?.(lead.id, added.body, added.created_at);
         setBody('');
       }
     } finally {
