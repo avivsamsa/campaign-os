@@ -28,13 +28,14 @@ export async function GET(req: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   const rows = (data ?? []) as (ReasonRow & { product_id: string | null })[];
-  // דדופ לפי label — סיבה ספציפית-לקטגוריה גוברת על כללית עם אותו שם
+  // דדופ לפי label — סיבה ספציפית-לקטגוריה (עם product_id) גוברת על כללית עם אותו שם
+  const ordered = [...rows.filter((row) => row.product_id), ...rows.filter((row) => !row.product_id)];
   const seen = new Set<string>();
   const deduped: ReasonRow[] = [];
-  for (const r of [...rows.filter((r) => r.product_id), ...rows.filter((r) => !r.product_id)]) {
-    if (seen.has(r.label)) continue;
-    seen.add(r.label);
-    deduped.push({ id: r.id, label: r.label, source: r.source });
+  for (const row of ordered) {
+    if (seen.has(row.label)) continue;
+    seen.add(row.label);
+    deduped.push({ id: row.id, label: row.label, source: row.source });
   }
   return NextResponse.json({
     admin: deduped.filter((r) => r.source === 'admin'),
