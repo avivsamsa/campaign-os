@@ -12,21 +12,33 @@ export async function GET(req: Request) {
   const client = await resolvePortalSession();
   if (!client) return NextResponse.json({ error: 'לא מחובר' }, { status: 401 });
 
-  const category = new URL(req.url).searchParams.get('category');
+  // ולידציה של הקטגוריה כ-UUID (מונע injection ל-.or() של PostgREST)
+  const rawCat = new URL(req.url).searchParams.get('category');
+  const category = rawCat && /^[0-9a-f-]{36}$/i.test(rawCat) ? rawCat : null;
   const sb = getSupabaseClient();
   let q = sb
     .from('lead_reasons')
-    .select('id, label, source')
+    .select('id, label, source, product_id')
     .eq('client_id', client.id)
     .order('created_at', { ascending: true });
-  q = category ? q.eq('product_id', category) : q.is('product_id', null);
+  // עם קטגוריה: סיבות הקטגוריה + הסיבות ה"כלליות" (product_id=null) שחלות על הכל.
+  // בלי קטגוריה: רק הכלליות.
+  q = category ? q.or(`product_id.eq.${category},product_id.is.null`) : q.is('product_id', null);
   const { data, error } = await q;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const rows = (data ?? []) as ReasonRow[];
+  const rows = (data ?? []) as (ReasonRow & { product_id: string | null })[];
+  // דדופ לפי label — סיבה ספציפית-לקטגוריה גוברת על כללית עם אותו שם
+  const seen = new Set<string>();
+  const deduped: ReasonRow[] = [];
+  for (const r of [...rows.filter((r) => r.product_id), ...rows.filter((r) => !r.product_id)]) {
+    if (seen.has(r.label)) continue;
+    seen.add(r.label);
+    deduped.push({ id: r.id, label: r.label, source: r.source });
+  }
   return NextResponse.json({
-    admin: rows.filter((r) => r.source === 'admin'),
-    client: rows.filter((r) => r.source === 'client'),
+    admin: deduped.filter((r) => r.source === 'admin'),
+    client: deduped.filter((r) => r.source === 'client'),
   });
 }
 
