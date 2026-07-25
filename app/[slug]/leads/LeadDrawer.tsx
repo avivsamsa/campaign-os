@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import { formatPhone, type EnrichedLead } from '@/lib/leads';
 
 type NoteMeta = { from?: string; to?: string; amount?: number | null; reason?: string | null };
@@ -65,6 +66,10 @@ export default function LeadDrawer({
   const [loading, setLoading] = useState(true);
   const [body, setBody] = useState('');
   const [saving, setSaving] = useState(false);
+  // portal ל-body: המגירה חייבת לצאת מכל ancestor עם transform/position
+  // (למשל .enter-up) כדי שה-scrim (position:fixed) יכסה את כל המסך נכון.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     setLoading(true);
@@ -135,7 +140,9 @@ export default function LeadDrawer({
       : []),
   ];
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div className="drawer-scrim" onClick={onClose}>
       <aside className="lead-drawer" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="פרטי ליד">
         <span className="drawer-grabber" aria-hidden="true" />
@@ -232,6 +239,7 @@ export default function LeadDrawer({
           )}
         </div>
       </aside>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -394,7 +394,7 @@ export default function PortalLeadsManager({
   const waLink = (phone: string) => `https://wa.me/${phone.replace(/\D/g, '')}`;
 
   return (
-    <div className="enter-up">
+    <div className="enter-up leads-manager">
       {errMsg && <div className="banner-error">{errMsg}</div>}
 
       <div className="leads-head">

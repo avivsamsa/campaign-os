@@ -2812,6 +2812,9 @@ body.portal-mode .app-main { margin-right: 0; }
   .leads-viewtoggle button.active { background: var(--primary-soft); color: var(--primary); }
   .leads-viewtoggle button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
+  /* עמוד הלידים מנצל את כל רוחב הדסקטופ (ה-container הרגיל מוגבל ל-1080) */
+  .portal-main:has(.leads-manager) { max-width: none; }
+
   /* החלפת התצוגה */
   .leads-body[data-view="table"] .lead-list { display: none; }
   .leads-body[data-view="table"] .lead-table-wrap { display: block; }
