@@ -2883,3 +2883,29 @@ body.portal-mode .app-main { margin-right: 0; }
 @media (prefers-reduced-motion: reduce) {
   .lead-table tbody tr.lead-row-new { animation: none; }
 }
+
+/* ==========================================================================
+   מסכים רחבים (≥1400px): הגדלה יחסית של טבלת הלידים והבקרות סביבה — כדי
+   שלא ייראה קטן במסך גדול, תוך שמירה על הפרופורציות והאסתטיקה.
+   ========================================================================== */
+@media (min-width: 1400px) {
+  /* טבלה */
+  .lead-table { font-size: 15.5px; }
+  .lead-table th, .lead-table td { padding: 15px 22px; }
+  .lead-table thead th { font-size: 13.5px; }
+  .lead-table .lt-name { font-size: 16.5px; }
+  .lead-table .lt-cat, .lead-table .lt-date, .lead-table .lt-notes,
+  .lead-table .lt-deal, .lead-table .lt-phone-num { font-size: 15px; }
+  .lead-table .lt-phone .row-act { width: 34px; height: 34px; }
+  .lead-table .lt-phone .row-act svg { width: 17px; height: 17px; }
+  .lead-table .lt-status .status-chip { font-size: 0.87rem; padding: 0.3rem 0.75rem; }
+  .lead-table .lt-note-add { font-size: 14.5px; }
+  .lead-table .lt-note-body { font-size: 15px; }
+
+  /* בקרות סביב הטבלה — שיישארו בפרופורציה */
+  .leads-search .input { font-size: 16px; padding: 14px 18px; }
+  .status-filter-chip { font-size: 0.9rem; padding: 0.4rem 0.85rem; }
+  .leads-head h1 { font-size: 1.75rem; }
+  .leads-viewtoggle button { font-size: 14.5px; height: 38px; }
+  .stat-num { font-size: 1.9rem; }
+}
