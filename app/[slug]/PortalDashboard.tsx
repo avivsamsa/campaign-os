@@ -75,6 +75,13 @@ export default function PortalDashboard({
         .pdash-pill { background: var(--primary); color: #fff; border-radius: 999px; padding: 4px 11px; font-size: 12.5px; font-weight: 800; white-space: nowrap; }
         .pdash-track { height: 5px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
         .pdash-track-fill { height: 100%; border-radius: 3px; background: var(--primary); }
+
+        /* דסקטופ (עם סרגל צד): מנצלים את הרוחב — תוכן רחב יותר וקמפיינים ב-2 טורים */
+        @media (min-width: 900px) {
+          .pdash { max-width: 1000px; }
+          .pdash-section { margin-top: 34px; }
+          .pdash-cats { display: grid; grid-template-columns: repeat(2, 1fr); align-items: start; }
+        }
       `}</style>
 
       <div className="pdash-grid">

@@ -36,6 +36,11 @@ export default function PortalAccountMenu({ slug }: { slug: string }) {
         .pacct-btn { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 999px; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text); transition: border-color .15s, background .15s; }
         .pacct-btn:hover { border-color: var(--border-strong); background: var(--surface-2); }
         .pacct-menu { position: absolute; top: calc(100% + 8px); inset-inline-end: 0; min-width: 210px; max-width: calc(100vw - 24px); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); padding: 6px; display: flex; flex-direction: column; z-index: 70; }
+        /* בדסקטופ הכפתור נמצא בסרגל הצמוד לקצה ימין — פתיחה ימינה תחרוג מהמסך.
+           לכן פותחים לכיוון פנים העמוד (inline-start = שמאל ב-RTL). */
+        @media (min-width: 900px) {
+          .portal-side .pacct-menu { inset-inline-start: 0; inset-inline-end: auto; }
+        }
         .pacct-menu > *, .pacct-menu .portal-logout, .pacct-menu .portal-delete-link { width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 10px; justify-content: flex-start; text-align: start; padding: 11px 12px; border-radius: var(--radius); border: none; background: none; font: inherit; color: var(--text); cursor: pointer; }
         .pacct-menu > *:hover, .pacct-menu .portal-logout:hover, .pacct-menu .portal-delete-link:hover { background: var(--surface-2); }
         .pacct-menu .portal-delete-link { color: var(--danger); }
