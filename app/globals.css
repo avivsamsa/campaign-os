@@ -1346,8 +1346,30 @@ body.portal-mode .app-main { margin-right: 0; }
 .status-filter-chip.all.active { box-shadow: 0 0 0 2px var(--primary); }
 
 /* ---------- Category gate + header ---------- */
-.leads-head { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; }
+.leads-head { display: flex; align-items: center; gap: 0.75rem 1rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
 .leads-head h1 { margin: 0; }
+
+/* מחליף קטגוריות — טאבים מצד שמאל לכותרת */
+.cat-switch { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+.cat-switch-btn {
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--duration) var(--ease), color var(--duration) var(--ease), border-color var(--duration) var(--ease);
+}
+.cat-switch-btn:hover { border-color: var(--border-strong); color: var(--text); }
+.cat-switch-btn.active {
+  background: var(--primary-soft);
+  color: var(--primary);
+  border-color: var(--primary);
+}
 .cat-back {
   border: 1px solid var(--border);
   background: var(--surface);
@@ -2906,6 +2928,7 @@ body.portal-mode .app-main { margin-right: 0; }
   .leads-search .input { font-size: 16px; padding: 14px 18px; }
   .status-filter-chip { font-size: 0.9rem; padding: 0.4rem 0.85rem; }
   .leads-head h1 { font-size: 1.75rem; }
+  .cat-switch-btn { font-size: 0.95rem; padding: 0.48rem 1rem; }
   .leads-viewtoggle button { font-size: 14.5px; height: 38px; }
   .stat-num { font-size: 1.9rem; }
 }

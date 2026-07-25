@@ -398,16 +398,28 @@ export default function PortalLeadsManager({
       {errMsg && <div className="banner-error">{errMsg}</div>}
 
       <div className="leads-head">
-        {selectedCategory && (
-          <button
-            type="button"
-            className="cat-back"
-            onClick={() => { setSelectedCategory(null); setStatusFilter(''); setSearch(''); }}
-          >
-            → כל הלידים
-          </button>
-        )}
         <h1>{selectedCategory ? selectedCategoryName : 'הלידים שלך'}</h1>
+        {gateCategories.length > 1 && (
+          <div className="cat-switch" role="group" aria-label="קטגוריות">
+            <button
+              type="button"
+              className={`cat-switch-btn ${!selectedCategory ? 'active' : ''}`.trim()}
+              onClick={() => { setSelectedCategory(null); setStatusFilter(''); setSearch(''); }}
+            >
+              כל הלידים
+            </button>
+            {gateCategories.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                className={`cat-switch-btn ${selectedCategory === c.id ? 'active' : ''}`.trim()}
+                onClick={() => { setSelectedCategory(c.id); setStatusFilter(''); setSearch(''); }}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+        )}
         {categoryLeads.length > 0 && (
           <div className="leads-viewtoggle" role="group" aria-label="תצוגת לידים">
             <button
