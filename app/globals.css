@@ -2847,21 +2847,23 @@ body.portal-mode .app-main { margin-right: 0; }
   .lead-table .lt-deal { color: var(--text-2); font-variant-numeric: tabular-nums; }
   .lead-table .lt-deal.won { color: var(--primary); font-weight: 750; }
 
-  /* תיעוד אחרון — תא לחיץ/עריך: pill עם אייקון, חיתוך לשורה אחת (מלא ב-tooltip) */
-  .lead-table .lt-note { max-width: 320px; cursor: pointer; }
+  /* תיעוד אחרון — תא לחיץ/עריך, רחב יותר עם עד 2 שורות (הלקוח משתמש בזה הרבה) */
+  .lead-table td.lt-note { width: 40%; max-width: 560px; cursor: pointer; white-space: normal; }
   .lead-table .lt-note-txt,
   .lead-table .lt-note-add {
-    display: inline-flex; align-items: center; gap: 6px;
-    max-width: 300px; padding: 4px 9px; margin: -4px -9px;
+    display: inline-flex; align-items: flex-start; gap: 7px;
+    max-width: 540px; padding: 5px 10px; margin: -5px -10px;
     border-radius: var(--radius-sm);
-    white-space: nowrap; overflow: hidden;
     transition: background var(--duration) var(--ease), color var(--duration) var(--ease);
   }
   .lead-table .lt-note-txt { color: var(--text-2); }
-  .lead-table .lt-note-body { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .lead-table .lt-note-ic { flex: none; opacity: 0.55; }
-  .lead-table .lt-note-add { color: var(--primary); font-size: 13px; font-weight: 650; }
-  /* hover — התא נראה כמו שדה עריכה לחיץ */
+  .lead-table .lt-note-body {
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; white-space: normal; line-height: 1.4;
+  }
+  .lead-table .lt-note-ic { flex: none; opacity: 0.55; margin-top: 2.5px; }
+  .lead-table .lt-note-add { align-items: center; color: var(--primary); font-size: 13px; font-weight: 650; }
+  /* hover — נראה כמו שדה עריכה לחיץ */
   .lead-table tbody tr:hover .lt-note-txt,
   .lead-table tbody tr:hover .lt-note-add { background: var(--primary-soft); color: var(--primary); }
   .lead-table tbody tr:hover .lt-note-ic { opacity: 1; }
