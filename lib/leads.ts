@@ -61,6 +61,8 @@ export type EnrichedLead = {
   creative_label: string | null;
   creative_thumb: string | null;
   notes_count: number;
+  last_note: string | null; // תוכן ההערה/תיעוד האחרון (אם יש)
+  last_note_at: string | null;
   form_id: string | null;
   category_id: string | null; // המוצר/קטגוריה שאליו מנותב הטופס
   category_name: string | null;
@@ -114,8 +116,13 @@ export async function fetchClientLeads(
       ? sb.from('ads').select('id, campaign_id, creative_id, meta_adset_id, meta_adset_name, name').in('id', adIds)
       : noRows<Record<string, unknown>>(),
     rows.length
-      ? sb.from('lead_notes').select('lead_id').eq('kind', 'note').in('lead_id', leadIds)
-      : noRows<{ lead_id: string }>(),
+      ? sb
+          .from('lead_notes')
+          .select('lead_id, body, created_at')
+          .eq('kind', 'note')
+          .in('lead_id', leadIds)
+          .order('created_at', { ascending: false })
+      : noRows<{ lead_id: string; body: string | null; created_at: string }>(),
   ]);
 
   const reasonLabel = new Map<string, string>();
@@ -144,11 +151,15 @@ export async function fetchClientLeads(
     });
   }
 
-  // ספירת הערות פר ליד — סבילות לטבלה חסרה (מיגרציה לא הורצה עדיין → 0).
+  // ספירת הערות + ההערה האחרונה פר ליד (התוצאה ממוינת desc, אז הראשונה = האחרונה).
   const notesCount = new Map<string, number>();
+  const lastNote = new Map<string, { body: string; at: string }>();
   if (!notesRes.error) {
     for (const n of notesRes.data ?? []) {
-      notesCount.set(n.lead_id as string, (notesCount.get(n.lead_id as string) ?? 0) + 1);
+      const id = n.lead_id as string;
+      notesCount.set(id, (notesCount.get(id) ?? 0) + 1);
+      const body = (n.body as string | null)?.trim();
+      if (body && !lastNote.has(id)) lastNote.set(id, { body, at: n.created_at as string });
     }
   }
 
@@ -200,6 +211,8 @@ export async function fetchClientLeads(
       creative_label: ad?.creative_id ? creativeLabel.get(ad.creative_id) ?? null : null,
       creative_thumb: ad?.creative_id ? creativeThumb.get(ad.creative_id) ?? null : null,
       notes_count: notesCount.get(l.id as string) ?? 0,
+      last_note: lastNote.get(l.id as string)?.body ?? null,
+      last_note_at: lastNote.get(l.id as string)?.at ?? null,
       form_id: (l.form_id as string) ?? null,
       category_id: l.form_id ? formToProduct.get(l.form_id as string) ?? null : null,
       category_name: l.form_id

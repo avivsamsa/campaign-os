@@ -42,6 +42,7 @@ export default async function PortalSlugLayout({
               <>
                 <PortalNotifBell slug={params.slug} />
                 <PortalAccountMenu slug={params.slug} />
+                <ThemeToggle />
               </>
             ) : (
               <ThemeToggle />

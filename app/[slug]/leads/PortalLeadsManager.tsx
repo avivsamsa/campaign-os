@@ -408,6 +408,30 @@ export default function PortalLeadsManager({
           </button>
         )}
         <h1>{selectedCategory ? selectedCategoryName : 'הלידים שלך'}</h1>
+        {categoryLeads.length > 0 && (
+          <div className="leads-viewtoggle" role="group" aria-label="תצוגת לידים">
+            <button
+              type="button"
+              className={view === 'cards' ? 'active' : ''}
+              aria-pressed={view === 'cards'}
+              onClick={() => changeView('cards')}
+              title="תצוגת כרטיסים"
+            >
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="5" rx="1.5" /><rect x="3" y="11" width="18" height="5" rx="1.5" /><rect x="3" y="18" width="18" height="2.5" rx="1" /></svg>
+              <span>כרטיסים</span>
+            </button>
+            <button
+              type="button"
+              className={view === 'table' ? 'active' : ''}
+              aria-pressed={view === 'table'}
+              onClick={() => changeView('table')}
+              title="תצוגת טבלה"
+            >
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5" /><path d="M3 9h18M3 14h18M9 4v16M15 4v16" /></svg>
+              <span>טבלה</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {categoryLeads.length > 0 && (
@@ -465,30 +489,6 @@ export default function PortalLeadsManager({
                 ＋ סטטוס
               </button>
             )}
-          </div>
-
-          {/* מתג תצוגה (דסקטופ בלבד): כרטיסים / טבלה */}
-          <div className="leads-viewtoggle" role="group" aria-label="תצוגת לידים">
-            <button
-              type="button"
-              className={view === 'cards' ? 'active' : ''}
-              aria-pressed={view === 'cards'}
-              onClick={() => changeView('cards')}
-              title="תצוגת כרטיסים"
-            >
-              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="5" rx="1.5" /><rect x="3" y="11" width="18" height="5" rx="1.5" /><rect x="3" y="18" width="18" height="2.5" rx="1" /></svg>
-              <span>כרטיסים</span>
-            </button>
-            <button
-              type="button"
-              className={view === 'table' ? 'active' : ''}
-              aria-pressed={view === 'table'}
-              onClick={() => changeView('table')}
-              title="תצוגת טבלה"
-            >
-              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5" /><path d="M3 9h18M3 14h18M9 4v16M15 4v16" /></svg>
-              <span>טבלה</span>
-            </button>
           </div>
         </>
       )}
@@ -589,6 +589,7 @@ export default function PortalLeadsManager({
                   <th>קטגוריה</th>
                   <th>נכנס</th>
                   <th>סטטוס</th>
+                  <th>תיעוד אחרון</th>
                   <th>סכום</th>
                   <th>הערות</th>
                 </tr>
@@ -635,6 +636,13 @@ export default function PortalLeadsManager({
                             </select>
                           )}
                         </span>
+                      </td>
+                      <td className="lt-note" onClick={() => setSelected(l)} title={l.last_note ?? undefined}>
+                        {l.last_note ? (
+                          <span className="lt-note-txt">{l.last_note}</span>
+                        ) : (
+                          <span className="lt-note-add">+ הוסף תיעוד</span>
+                        )}
                       </td>
                       <td className={`lt-deal ${isClosed && r.deal_value ? 'won' : ''}`.trim()}>
                         {isClosed && r.deal_value ? `₪${nfIls.format(Number(r.deal_value))}` : '—'}

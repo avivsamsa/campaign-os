@@ -2789,8 +2789,7 @@ body.portal-mode .app-main { margin-right: 0; }
   .leads-viewtoggle {
     display: inline-flex;
     gap: 3px;
-    margin-inline-start: auto;      /* דוחף לקצה (שמאל ב-RTL) */
-    margin-bottom: 14px;
+    margin-inline-start: auto;      /* דוחף לקצה (שמאל ב-RTL) בשורת הכותרת */
     width: fit-content;
     background: var(--surface);
     border: 1px solid var(--border);
@@ -2841,12 +2840,23 @@ body.portal-mode .app-main { margin-right: 0; }
   .lead-table .lt-deal { color: var(--text-2); font-variant-numeric: tabular-nums; }
   .lead-table .lt-deal.won { color: var(--primary); font-weight: 750; }
 
+  /* תיעוד אחרון — חיתוך לשורה אחת עם ellipsis, טקסט מלא ב-title/tooltip */
+  .lead-table .lt-note { max-width: 300px; }
+  .lead-table .lt-note-txt {
+    display: block; max-width: 300px;
+    color: var(--text-2);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .lead-table .lt-note-add { color: var(--muted-2); font-size: 13px; font-weight: 600; }
+  .lead-table tbody tr:hover .lt-note-add { color: var(--primary); }
+
   .lead-table .lt-phone-in { display: inline-flex; align-items: center; gap: 8px; }
   .lead-table .lt-phone-num { color: var(--text-2); font-variant-numeric: tabular-nums; }
   .lead-table .lt-phone .row-act { width: 28px; height: 28px; }
 
-  /* pill הסטטוס בתוך התא — שומר על העריכה (select שקוף מעליו) */
-  .lead-table .lt-status .status-chip { cursor: pointer; }
+  /* pill הסטטוס בתוך התא — position:relative כדי שה-select השקוף (inset:0) יוגבל
+     לתוך ה-pill ולא יגלוש ויחסום כפתורים אחרים (למשל מתג התצוגה). */
+  .lead-table .lt-status .status-chip { position: relative; cursor: pointer; }
 
   /* שורת ליד חדש — הבהוב עדין (כמו בכרטיסים) */
   .lead-table tbody tr.lead-row-new { animation: leadIn 0.65s var(--ease-out) both; }
