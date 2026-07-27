@@ -87,6 +87,23 @@ export default function CategoriesEditor({ clientId }: { clientId: string }) {
     if (res.ok) load();
   }
 
+  // הצג/הסתר קטגוריה מהפורטל של הלקוח (עדכון אופטימי + rollback בכשל)
+  async function toggleVisibility(p: Product) {
+    const next = !p.portal_hidden;
+    setProducts((prev) => prev.map((x) => (x.id === p.id ? { ...x, portal_hidden: next } : x)));
+    try {
+      const res = await fetch(`/api/clients/${clientId}/products`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: p.id, portal_hidden: next }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setProducts((prev) => prev.map((x) => (x.id === p.id ? { ...x, portal_hidden: p.portal_hidden } : x)));
+      setError('עדכון הנראות נכשל');
+    }
+  }
+
   function profitLabel(p: Product): string {
     if (p.profit_mode === 'margin') {
       return `${nf2.format((p.margin_pct ?? 0) * 100)}% רווח${p.price != null ? ` · מחיר ₪${nf2.format(p.price)}` : ''}`;
@@ -170,14 +187,25 @@ export default function CategoriesEditor({ clientId }: { clientId: string }) {
               <tr>
                 <th style={{ textAlign: 'right' }}>קטגוריה</th>
                 <th style={{ textAlign: 'right' }}>מודל רווח</th>
+                <th style={{ textAlign: 'right' }}>נראות בפורטל</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               {products.map((p) => (
-                <tr key={p.id}>
+                <tr key={p.id} style={p.portal_hidden ? { opacity: 0.6 } : undefined}>
                   <td style={{ textAlign: 'right', fontWeight: 500 }}>{p.name}</td>
                   <td style={{ textAlign: 'right' }}>{profitLabel(p)}</td>
+                  <td style={{ textAlign: 'right' }}>
+                    <button
+                      type="button"
+                      className={`vis-toggle ${p.portal_hidden ? 'off' : 'on'}`}
+                      onClick={() => toggleVisibility(p)}
+                      title={p.portal_hidden ? 'הצג ללקוח' : 'הסתר מהלקוח'}
+                    >
+                      {p.portal_hidden ? 'מוסתר' : 'מוצג'}
+                    </button>
+                  </td>
                   <td>
                     <button className="btn" onClick={() => startEdit(p)}>עריכה</button>{' '}
                     <button className="btn" onClick={() => remove(p.id)}>מחיקה</button>

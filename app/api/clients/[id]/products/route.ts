@@ -9,7 +9,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const sb = getSupabaseClient();
   const { data, error } = await sb
     .from('products')
-    .select('id, name, profit_mode, price, margin_pct, profit_amount, created_at')
+    .select('id, name, profit_mode, price, margin_pct, profit_amount, portal_hidden, created_at')
     .eq('client_id', params.id)
     .order('created_at', { ascending: true });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -42,7 +42,30 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const { data, error } = await sb
     .from('products')
     .insert({ client_id: params.id, ...parsed.value })
-    .select('id, name, profit_mode, price, margin_pct, profit_amount, created_at')
+    .select('id, name, profit_mode, price, margin_pct, profit_amount, portal_hidden, created_at')
+    .single();
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ product: data });
+}
+
+// PATCH /api/clients/[id]/products — עדכון נראות קטגוריה בפורטל (הצג/הסתר ללקוח)
+export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+  const sb = getSupabaseClient();
+  let body: { productId?: string; portal_hidden?: boolean };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'JSON לא תקין' }, { status: 400 });
+  }
+  const productId = typeof body.productId === 'string' ? body.productId : '';
+  if (!productId) return NextResponse.json({ error: 'productId חסר' }, { status: 400 });
+
+  const { data, error } = await sb
+    .from('products')
+    .update({ portal_hidden: body.portal_hidden === true })
+    .eq('id', productId)
+    .eq('client_id', params.id)
+    .select('id, name, profit_mode, price, margin_pct, profit_amount, portal_hidden, created_at')
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ product: data });

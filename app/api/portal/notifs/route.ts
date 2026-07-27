@@ -35,6 +35,7 @@ export async function GET() {
   // שם הקטגוריה לכל טופס שמופיע — רק אם יש לידים חדשים
   const formIds = [...new Set(rawLeads.map((l) => l.form_id as string).filter(Boolean))];
   const formToName = new Map<string, string | null>();
+  const hiddenForms = new Set<string>(); // טפסים ששייכים לקטגוריה מוסתרת
   if (formIds.length > 0) {
     const { data: routes } = await sb
       .from('lead_form_routes')
@@ -42,16 +43,23 @@ export async function GET() {
       .in('form_id', formIds);
     const productIds = [...new Set((routes ?? []).map((r) => r.product_id as string).filter(Boolean))];
     if (productIds.length > 0) {
-      const { data: prods } = await sb.from('products').select('id, name').in('id', productIds);
+      const { data: prods } = await sb.from('products').select('id, name, portal_hidden').in('id', productIds);
       const pName = new Map((prods ?? []).map((p) => [p.id as string, p.name as string]));
+      const hiddenProd = new Set(
+        (prods ?? []).filter((p) => (p as { portal_hidden?: boolean }).portal_hidden).map((p) => p.id as string),
+      );
       for (const r of routes ?? []) {
         formToName.set(r.form_id as string, pName.get(r.product_id as string) ?? null);
+        if (hiddenProd.has(r.product_id as string)) hiddenForms.add(r.form_id as string);
       }
     }
   }
 
+  // הסתרה מלאה: מדלגים על לידים חדשים ששייכים לקטגוריה מוסתרת (לא בפעמון).
+  const visibleLeads = rawLeads.filter((l) => !(l.form_id && hiddenForms.has(l.form_id as string)));
+
   return NextResponse.json({
-    leads: rawLeads.map((l) => ({
+    leads: visibleLeads.map((l) => ({
       id: l.id as string,
       name: (l.name as string) ?? null,
       category_name: l.form_id ? formToName.get(l.form_id as string) ?? null : null,

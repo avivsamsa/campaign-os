@@ -14,6 +14,7 @@ export type Product = {
   price: number | null;
   margin_pct: number | null;
   profit_amount: number | null;
+  portal_hidden?: boolean; // true = מוסתר מהפורטל של הלקוח
 };
 
 export type ProductInput = {

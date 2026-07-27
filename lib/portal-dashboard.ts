@@ -14,7 +14,7 @@ export async function computePortalDashboard(clientId: string): Promise<PortalDa
 
   // הכל במקביל — fetchClientLeads הכבד רץ יחד עם products + client (שלא תלויים בו)
   const [leads, productsRes, cRes] = await Promise.all([
-    fetchClientLeads(clientId, { heavy: false }),
+    fetchClientLeads(clientId, { heavy: false, portalHide: true }),
     sb.from('products').select('id, profit_mode, margin_pct, profit_amount').eq('client_id', clientId),
     sb.from('clients').select('gross_margin').eq('id', clientId).maybeSingle(),
   ]);

@@ -10,7 +10,7 @@ export async function GET() {
   if (!client) return NextResponse.json({ error: 'לא מחובר' }, { status: 401 });
   if (!client.show_leads) return NextResponse.json({ error: 'אין גישה ללידים' }, { status: 403 });
   try {
-    const leads = await fetchClientLeads(client.id, { heavy: false });
+    const leads = await fetchClientLeads(client.id, { heavy: false, portalHide: true });
     return NextResponse.json({ leads });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });

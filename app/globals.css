@@ -2932,3 +2932,17 @@ body.portal-mode .app-main { margin-right: 0; }
   .leads-viewtoggle button { font-size: 14.5px; height: 38px; }
   .stat-num { font-size: 1.9rem; }
 }
+
+/* מתג נראות קטגוריה בפורטל (אדמין → ניהול קטגוריות) */
+.vis-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--muted); border-radius: var(--radius-full);
+  padding: 0.3rem 0.85rem; font-size: 0.82rem; font-weight: 700;
+  font-family: inherit; cursor: pointer;
+  transition: color var(--duration) var(--ease), border-color var(--duration) var(--ease), background var(--duration) var(--ease);
+}
+.vis-toggle::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
+.vis-toggle.on { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, var(--border)); }
+.vis-toggle.off { color: var(--muted); }
+.vis-toggle:hover { background: var(--surface-2); }

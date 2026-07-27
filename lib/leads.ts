@@ -86,9 +86,11 @@ export function nextClosedAt(status: string, existing: string | null): string | 
  */
 export async function fetchClientLeads(
   clientId: string,
-  opts?: { heavy?: boolean },
+  opts?: { heavy?: boolean; portalHide?: boolean },
 ): Promise<EnrichedLead[]> {
   const heavy = opts?.heavy !== false;
+  // portalHide=true (בקריאות מהפורטל): מסתיר לידים של קטגוריות שסומנו portal_hidden.
+  const portalHide = opts?.portalHide === true;
   const sb = getSupabaseClient();
 
   const { data: leads, error } = await sb
@@ -111,7 +113,7 @@ export async function fetchClientLeads(
       ? sb.from('lead_reasons').select('id, label').in('id', reasonIds)
       : noRows<{ id: string; label: string }>(),
     sb.from('lead_form_routes').select('form_id, product_id').eq('client_id', clientId),
-    sb.from('products').select('id, name').eq('client_id', clientId),
+    sb.from('products').select('id, name, portal_hidden').eq('client_id', clientId),
     heavy && adIds.length
       ? sb.from('ads').select('id, campaign_id, creative_id, meta_adset_id, meta_adset_name, name').in('id', adIds)
       : noRows<Record<string, unknown>>(),
@@ -130,6 +132,9 @@ export async function fetchClientLeads(
 
   const formToProduct = new Map((routesRes.data ?? []).map((r) => [r.form_id as string, r.product_id as string]));
   const productName = new Map((productsRes.data ?? []).map((p) => [p.id as string, p.name as string]));
+  const hiddenProducts = new Set(
+    (productsRes.data ?? []).filter((p) => (p as { portal_hidden?: boolean }).portal_hidden).map((p) => p.id as string),
+  );
 
   const adInfo = new Map<
     string,
@@ -186,7 +191,7 @@ export async function fetchClientLeads(
     creativeThumb.set(c.id as string, (c.asset_url as string) ?? null);
   }
 
-  return rows.map((l) => {
+  const enriched = rows.map((l) => {
     const ad = l.ad_id ? adInfo.get(l.ad_id) : undefined;
     const adsetLabel = ad
       ? ad.adset_name || (ad.meta_adset_id ? `Adset ${ad.meta_adset_id}` : null)
@@ -222,4 +227,7 @@ export async function fetchClientLeads(
       reason_label: l.reason_id ? reasonLabel.get(l.reason_id as string) ?? null : null,
     };
   });
+
+  // מהפורטל — משמיטים לידים ששייכים לקטגוריה מוסתרת (הסתרה מלאה).
+  return portalHide ? enriched.filter((l) => !(l.category_id && hiddenProducts.has(l.category_id))) : enriched;
 }

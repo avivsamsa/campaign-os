@@ -18,7 +18,7 @@ export default async function PortalLeadsPage({
   if (!isAuthedForClient(client.id)) redirect(`/${params.slug}`);
   if (!client.show_leads) redirect(`/${params.slug}`);
 
-  const leads = await fetchClientLeads(client.id, { heavy: false });
+  const leads = await fetchClientLeads(client.id, { heavy: false, portalHide: true });
 
   // הקטגוריות נבנות מהלידים עצמם — fetchClientLeads כבר מחזיר category_name,
   // אז אין צורך בשאילתת products נוספת (round-trip חסוך).

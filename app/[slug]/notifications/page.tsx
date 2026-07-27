@@ -12,7 +12,7 @@ export default async function PortalNotificationsPage({ params }: { params: { sl
 
   if (!isAuthedForClient(client.id)) redirect(`/${params.slug}`);
 
-  const leads = await fetchClientLeads(client.id, { heavy: false });
+  const leads = await fetchClientLeads(client.id, { heavy: false, portalHide: true });
   const sb = getSupabaseClient();
   const { data: messages } = await sb
     .from('portal_messages')
