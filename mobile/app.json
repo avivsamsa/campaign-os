@@ -2,7 +2,7 @@
   "expo": {
     "name": "AvivPPC",
     "slug": "campaign-os",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "runtimeVersion": { "policy": "appVersion" },
     "scheme": "campaignos",
     "orientation": "portrait",
@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "il.co.avivsamsa.campaignos",
-      "buildNumber": "7",
+      "buildNumber": "8",
       "icon": "./assets/icon-ios.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,

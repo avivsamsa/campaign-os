@@ -12,6 +12,8 @@ import {
   View,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
+import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
 import {
   addNote,
   addReason,
@@ -71,12 +73,21 @@ export default function LeadDetail() {
   const [body, setBody] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const [copied, setCopied] = useState(false);
   const [amountModal, setAmountModal] = useState(false);
   const [amountVal, setAmountVal] = useState('');
   const [reasonModal, setReasonModal] = useState(false);
   const [reasons, setReasons] = useState<{ admin: Reason[]; client: Reason[] }>({ admin: [], client: [] });
   const [loadingReasons, setLoadingReasons] = useState(false);
   const [newReason, setNewReason] = useState('');
+
+  // העתקת מספר הטלפון ללוח + חיווז "הועתק" קצר
+  async function copyPhone(phone: string) {
+    await Clipboard.setStringAsync(formatPhone(phone));
+    Haptics.selectionAsync().catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  }
 
   const reloadNotes = useCallback(async () => {
     try {
@@ -189,7 +200,10 @@ export default function LeadDetail() {
 
       {lead.phone ? (
         <View style={s.phoneRow}>
-          <Text style={s.phone}>{formatPhone(lead.phone)}</Text>
+          <Pressable onPress={() => copyPhone(lead.phone!)} hitSlop={10} style={{ flexShrink: 1 }}>
+            <Text style={s.phone}>{formatPhone(lead.phone)}</Text>
+            {copied ? <Text style={s.copiedHint}>✓ המספר הועתק</Text> : <Text style={s.copyHint}>הקש להעתקה</Text>}
+          </Pressable>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <Pressable style={[s.pill, { backgroundColor: c.wa }]} onPress={() => Linking.openURL(`https://wa.me/${lead.phone!.replace(/\D/g, '')}`)}>
               <Text style={s.pillText}>וואטסאפ</Text>
@@ -299,6 +313,8 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   label: { color: c.muted, fontSize: 13, fontWeight: '700', textAlign: 'right', marginBottom: 8 },
   phoneRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: c.surface, borderColor: c.border, borderWidth: 1, borderRadius: 14, padding: 12 },
   phone: { color: c.text, fontSize: 17, fontWeight: '600' },
+  copyHint: { color: c.muted, fontSize: 11, fontWeight: '500', textAlign: 'right', marginTop: 3 },
+  copiedHint: { color: c.wa, fontSize: 11.5, fontWeight: '700', textAlign: 'right', marginTop: 3 },
   pill: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999 },
   pillText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   statusWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
