@@ -11,14 +11,16 @@ import LeadsManager from './leads/LeadsManager';
 import PortalSettingsEditor from './PortalSettingsEditor';
 import CategoriesEditor from './CategoriesEditor';
 import MessagesEditor from './MessagesEditor';
+import ClientAnalytics from './ClientAnalytics';
 
-type TabId = 'overview' | 'brain' | 'profit' | 'leads' | 'categories' | 'sync' | 'portal' | 'messages';
+type TabId = 'overview' | 'brain' | 'profit' | 'leads' | 'analytics' | 'categories' | 'sync' | 'portal' | 'messages';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'overview', label: 'סקירה' },
   { id: 'brain', label: 'Brain' },
   { id: 'profit', label: 'מנוע רווח' },
   { id: 'leads', label: 'לידים' },
+  { id: 'analytics', label: 'אנליטיקה' },
   { id: 'categories', label: 'קטגוריות' },
   { id: 'messages', label: 'עדכונים' },
   { id: 'sync', label: 'סנכרון' },
@@ -30,9 +32,10 @@ type Props = {
   brain: ClientBrain | null;
   profitConfig: { variables: Record<string, unknown>; formulas: Formula[] } | null;
   leads: EnrichedLead[];
+  spendByCategory: Record<string, number>;
 };
 
-export default function ClientTabs({ client, brain, profitConfig, leads }: Props) {
+export default function ClientTabs({ client, brain, profitConfig, leads, spendByCategory }: Props) {
   const [tab, setTab] = useState<TabId>('overview');
 
   return (
@@ -61,6 +64,7 @@ export default function ClientTabs({ client, brain, profitConfig, leads }: Props
         />
       )}
       {tab === 'leads' && <LeadsManager clientId={client.id} initialLeads={leads} />}
+      {tab === 'analytics' && <ClientAnalytics leads={leads} spendByCategory={spendByCategory} currency={client.currency} />}
       {tab === 'sync' && <SyncButton clientId={client.id} />}
       {tab === 'categories' && <CategoriesEditor clientId={client.id} />}
       {tab === 'messages' && <MessagesEditor clientId={client.id} />}

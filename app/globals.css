@@ -1885,6 +1885,135 @@ body.portal-mode .app-main { margin-right: 0; }
   white-space: nowrap;
 }
 
+/* ── טאב אנליטיקה: KPIs, פילוח קטגוריות, עוגת סיבות ── */
+.ia-filter-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+}
+.ia-filter { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.ia-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: background var(--duration, 0.15s) var(--ease, ease), border-color var(--duration, 0.15s) var(--ease, ease), color var(--duration, 0.15s) var(--ease, ease);
+}
+.ia-filter-btn:hover { border-color: var(--primary); color: var(--text); }
+.ia-filter-btn.active {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.ia-filter-cnt {
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  background: var(--surface-3);
+  border-radius: var(--radius-full);
+  padding: 0.02rem 0.4rem;
+}
+.ia-filter-btn.active .ia-filter-cnt { color: var(--primary); background: transparent; }
+
+.ia-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.65rem;
+  margin: 0.5rem 0 0.4rem;
+}
+.ia-kpi {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.8rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.ia-kpi-num {
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.ia-kpi-num.ia-accent { color: var(--primary); }
+.ia-kpi-lbl { font-size: 0.78rem; color: var(--muted); }
+
+.ia-section-title {
+  margin-top: 1.2rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 0.7rem;
+}
+
+.ia-cat-list { display: flex; flex-direction: column; gap: 0.7rem; }
+.ia-cat-row { display: flex; flex-direction: column; gap: 0.35rem; }
+.ia-cat-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.6rem; }
+.ia-cat-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ia-cat-val { font-size: 0.82rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ia-cat-track {
+  height: 12px;
+  background: var(--surface-3);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+.ia-cat-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, var(--primary), color-mix(in srgb, var(--primary) 55%, var(--surface)));
+  min-width: 3px;
+  transition: width var(--duration, 0.2s) var(--ease, ease);
+}
+
+.ia-pie-wrap {
+  display: flex;
+  align-items: center;
+  gap: 1.6rem;
+  flex-wrap: wrap;
+}
+.ia-pie { width: 190px; height: 190px; flex-shrink: 0; }
+.ia-pie-num { fill: var(--text); font-size: 26px; font-weight: 800; }
+.ia-pie-sub { fill: var(--muted); font-size: 12px; }
+
+.ia-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 200px;
+}
+.ia-legend-row { display: flex; align-items: center; gap: 0.55rem; }
+.ia-legend-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+.ia-legend-label {
+  font-size: 0.86rem;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ia-legend-val { font-size: 0.82rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
 /* ניהול סטטוסים מותאמים */
 .add-status-btn {
   border: 1px dashed var(--border-strong);

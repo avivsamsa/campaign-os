@@ -4,6 +4,7 @@ import { getSupabaseClient } from '@/lib/supabase';
 import type { Client, ClientBrain } from '@/lib/types';
 import type { Formula } from '@/lib/profit';
 import { fetchClientLeads } from '@/lib/leads';
+import { queryMetrics } from '@/lib/metrics';
 import ClientTabs from '../ClientTabs';
 
 export const dynamic = 'force-dynamic';
@@ -32,6 +33,21 @@ export default async function ClientSettingsPage({ params }: { params: { id: str
     .maybeSingle();
 
   const leads = await fetchClientLeads(params.id);
+
+  // הוצאת פרסום לפי קטגוריה (כל התקופה) — לחישוב עלות לרכישה (CPA) בטאב אנליטיקה,
+  // כולל כשמסננים קטגוריות. המפתח הוא product_id (= category_id של הליד); '(none)' → ללא קטגוריה.
+  const spendByCategory: Record<string, number> = {};
+  try {
+    const until = new Date().toISOString().slice(0, 10);
+    const metrics = await queryMetrics({ client_id: params.id }, 'category', { since: '2020-01-01', until });
+    for (const row of metrics.rows) {
+      const key = row.key === '(none)' ? '__none__' : row.key;
+      spendByCategory[key] = (spendByCategory[key] ?? 0) + row.spend;
+    }
+  } catch {
+    /* אין נתוני מדדים — CPA יוצג כלא-זמין */
+  }
+
   const typedClient = client as Client;
 
   return (
@@ -47,6 +63,7 @@ export default async function ClientSettingsPage({ params }: { params: { id: str
           (profitConfig as { variables: Record<string, unknown>; formulas: Formula[] } | null) ?? null
         }
         leads={leads}
+        spendByCategory={spendByCategory}
       />
     </main>
   );
