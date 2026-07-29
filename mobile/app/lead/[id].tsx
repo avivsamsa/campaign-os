@@ -17,6 +17,7 @@ import * as Haptics from 'expo-haptics';
 import {
   addNote,
   addReason,
+  addStatus,
   getNotes,
   getReasons,
   updateLead,
@@ -25,7 +26,7 @@ import {
 } from '../../lib/api';
 import { useData } from '../../lib/data';
 import { useColors } from '../../lib/theme-context';
-import { BUILTIN_STATUSES, customStatusHex, formatPhone, statusColor, statusLabel, CONTENT_MAX, type Palette } from '../../lib/theme';
+import { BUILTIN_STATUSES, customStatusHex, formatPhone, statusColor, statusLabel, STATUS_COLORS, STATUS_COLOR_NAMES, CONTENT_MAX, type Palette } from '../../lib/theme';
 
 const nf = new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 });
 const dt = (iso: string) =>
@@ -40,10 +41,10 @@ function kindColor(k: string | undefined, c: Palette): string {
   }
 }
 
-function noteText(n: Note): string {
+function noteText(n: Note, statusName: (k: string) => string): string {
   const m = n.meta ?? {};
   switch (n.kind) {
-    case 'status': return `סטטוס: ${statusLabel[m.from] ?? m.from} ← ${statusLabel[m.to] ?? m.to}`;
+    case 'status': return `סטטוס: ${statusName(m.from ?? '')} ← ${statusName(m.to ?? '')}`;
     case 'purchase': return `סומן רכישה${m.amount != null ? ` · ₪${nf.format(Number(m.amount))}` : ''}`;
     case 'irrelevant': return `לא רלוונטי${m.reason ? ` · ${m.reason}` : ''}`;
     default: return n.body;
@@ -80,6 +81,22 @@ export default function LeadDetail() {
   const [reasons, setReasons] = useState<{ admin: Reason[]; client: Reason[] }>({ admin: [], client: [] });
   const [loadingReasons, setLoadingReasons] = useState(false);
   const [newReason, setNewReason] = useState('');
+  const [statusModal, setStatusModal] = useState(false);
+  const [newStatusLabel, setNewStatusLabel] = useState('');
+  const [newStatusColor, setNewStatusColor] = useState('blue');
+  const [addingStatus, setAddingStatus] = useState(false);
+
+  // שם סטטוס לתצוגה: מובנה → מותאם-אישית (לפי id) → נפילה חיננית (בלי UUID גולמי)
+  const statusName = useCallback(
+    (key: string): string => {
+      if (!key) return '';
+      if (statusLabel[key]) return statusLabel[key];
+      const cs = statuses.find((st) => st.id === key);
+      if (cs) return cs.label;
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(key) ? 'סטטוס מותאם' : key;
+    },
+    [statuses],
+  );
 
   // העתקת מספר הטלפון ללוח + חיווז "הועתק" קצר
   async function copyPhone(phone: string) {
@@ -172,6 +189,26 @@ export default function LeadDetail() {
     }
   }
 
+  // יצירת סטטוס מותאם מתוך עמוד הליד + החלה מיידית על הליד הנוכחי
+  async function createStatus() {
+    const label = newStatusLabel.trim();
+    if (!label || addingStatus) return;
+    setAddingStatus(true);
+    try {
+      const d = await addStatus(label, newStatusColor);
+      setStatusModal(false);
+      setNewStatusLabel('');
+      setNewStatusColor('blue');
+      setOptStatus(d.status.id); // משוב מיידי — הצ'יפ החדש נדלק
+      await updateLead(id, { status: d.status.id });
+      afterChange(); // refresh טוען את רשימת הסטטוסים מחדש כך שהצ'יפ יופיע
+    } catch (e) {
+      Alert.alert('שגיאה', e instanceof Error ? e.message : 'הוספת סטטוס נכשלה');
+    } finally {
+      setAddingStatus(false);
+    }
+  }
+
   async function submitNote() {
     const text = body.trim();
     if (!text) return;
@@ -236,6 +273,9 @@ export default function LeadDetail() {
               </Pressable>
             );
           })}
+          <Pressable onPress={() => setStatusModal(true)} style={[s.statusChip, s.addStatusChip]} accessibilityLabel="הוסף סטטוס">
+            <Text style={[s.statusChipText, { color: c.muted }]}>＋ סטטוס</Text>
+          </Pressable>
         </View>
         {lead.status === 'closed' && lead.deal_value ? <Text style={s.deal}>סכום: ₪{nf.format(Number(lead.deal_value))}</Text> : null}
         {lead.status === 'irrelevant' && lead.reason_label ? <Text style={s.sub}>סיבה: {lead.reason_label}</Text> : null}
@@ -255,7 +295,7 @@ export default function LeadDetail() {
           notes.map((n) => (
             <View key={n.id} style={[s.noteItem, { borderRightWidth: 3, borderRightColor: kindColor(n.kind, c) }]}>
               <Text style={s.noteTime}>{dt(n.created_at)}</Text>
-              <Text style={s.noteBody}>{noteText(n)}</Text>
+              <Text style={s.noteBody}>{noteText(n, statusName)}</Text>
             </View>
           ))
         )}
@@ -301,6 +341,31 @@ export default function LeadDetail() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      <Modal visible={statusModal} transparent animationType="fade" onRequestClose={() => setStatusModal(false)}>
+        <Pressable style={s.backdrop} onPress={() => setStatusModal(false)}>
+          <Pressable style={s.modal} onPress={() => {}}>
+            <Text style={s.modalTitle}>סטטוס חדש</Text>
+            <TextInput style={s.modalInput} value={newStatusLabel} onChangeText={setNewStatusLabel} placeholder="שם הסטטוס" placeholderTextColor={c.muted} autoFocus maxLength={30} />
+            <View style={s.colorRow}>
+              {STATUS_COLOR_NAMES.map((name) => (
+                <Pressable
+                  key={name}
+                  onPress={() => setNewStatusColor(name)}
+                  style={[s.swatch, { backgroundColor: STATUS_COLORS[name] }, newStatusColor === name && s.swatchActive]}
+                  accessibilityLabel={`צבע ${name}`}
+                />
+              ))}
+            </View>
+            <View style={s.modalActions}>
+              <Pressable style={[s.mBtn, s.mBtnGhost]} onPress={() => setStatusModal(false)}><Text style={s.mBtnGhostText}>ביטול</Text></Pressable>
+              <Pressable style={[s.mBtn, s.mBtnPrimary, (!newStatusLabel.trim() || addingStatus) && { opacity: 0.5 }]} onPress={createStatus} disabled={!newStatusLabel.trim() || addingStatus}>
+                <Text style={s.mBtnPrimaryText}>{addingStatus ? 'שומר…' : 'הוסף'}</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScrollView>
   );
 }
@@ -320,6 +385,10 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   statusWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   statusChip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 },
   statusChipText: { fontSize: 13, fontWeight: '600' },
+  addStatusChip: { borderColor: c.borderStrong, borderStyle: 'dashed' },
+  colorRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginVertical: 6 },
+  swatch: { width: 30, height: 30, borderRadius: 15, borderWidth: 2, borderColor: 'transparent' },
+  swatchActive: { borderColor: c.text },
   deal: { color: c.ok, fontWeight: '700', textAlign: 'right', marginTop: 8 },
   noteInput: { backgroundColor: c.surface, borderColor: c.borderStrong, borderWidth: 1, borderRadius: 12, padding: 12, color: c.text, fontSize: 15, minHeight: 60, textAlign: 'right', textAlignVertical: 'top' },
   addBtn: { backgroundColor: c.primary, borderRadius: 999, paddingVertical: 13, alignItems: 'center' },

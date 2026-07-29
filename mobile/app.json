@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "il.co.avivsamsa.campaignos",
-      "buildNumber": "8",
+      "buildNumber": "10",
       "icon": "./assets/icon-ios.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,

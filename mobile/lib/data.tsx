@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
+import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { getDashboard, getLeads, getMessages, getStatuses, type CustomStatus, type DashboardData, type Lead, type Message } from './api';
 import { useAuth } from './auth';
@@ -42,7 +43,7 @@ const READ_LEADS_KEY = 'read_leads';
 const READ_LEADS_CAP = 200;
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  const { token } = useAuth();
+  const { token, signOut } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [statuses, setStatuses] = useState<CustomStatus[]>([]);
@@ -91,13 +92,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (dash) setDashboard(dash);
       setStatuses(sts);
       setMessages(msgs);
-      setReady(true);
-    } catch {
-      /* שקט — ננסה שוב בפולינג הבא */
+    } catch (e) {
+      // סשן פג תוקף (טוקן ישן) → נתק והחזר להתחברות. אחרת נשארים תקועים בטעינה אינסופית.
+      if (e instanceof Error && e.message === 'UNAUTHORIZED') {
+        await signOut();
+        router.replace('/login');
+        return;
+      }
+      /* שגיאה זמנית אחרת — ננסה שוב בפולינג הבא */
     } finally {
+      // תמיד לסמן "מוכן" כדי שהמסך יציג תוכן/מצב-ריק במקום ספינר נצחי.
+      setReady(true);
       inflight.current = false;
     }
-  }, [token]);
+  }, [token, signOut]);
 
   // טעינה ראשונית / איפוס בהחלפת token
   useEffect(() => {
