@@ -72,6 +72,30 @@ function chunk<T>(arr: T[], size: number): T[][] {
   return out;
 }
 
+/**
+ * סך ההוצאה (כל התקופה) לכל מודעה של הלקוח: ad_id → spend.
+ * משמש לייחוס הוצאה לקטגוריה דרך הלידים (ad_id של הליד) בטאב אנליטיקה.
+ */
+export async function spendByAdId(clientId: string): Promise<Map<string, number>> {
+  const sb = getSupabaseClient();
+  const { data: campaigns } = await sb.from('campaigns').select('id').eq('client_id', clientId);
+  const campaignIds = (campaigns ?? []).map((c) => c.id as string);
+  if (campaignIds.length === 0) return new Map();
+  const { data: ads } = await sb.from('ads').select('id').in('campaign_id', campaignIds);
+  const adIds = (ads ?? []).map((a) => a.id as string);
+  if (adIds.length === 0) return new Map();
+
+  const spend = new Map<string, number>();
+  for (const batch of chunk(adIds, 200)) {
+    const { data } = await sb.from('daily_metrics').select('ad_id, spend').in('ad_id', batch);
+    for (const r of data ?? []) {
+      const id = r.ad_id as string;
+      spend.set(id, (spend.get(id) ?? 0) + num(r.spend));
+    }
+  }
+  return spend;
+}
+
 /** תחילת השבוע (יום ראשון, UTC) עבור תאריך 'YYYY-MM-DD'. */
 function weekStart(dateStr: string): string {
   const d = new Date(`${dateStr}T00:00:00Z`);

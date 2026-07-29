@@ -4,8 +4,10 @@ import { getSupabaseClient } from '@/lib/supabase';
 import type { Client, ClientBrain } from '@/lib/types';
 import type { Formula } from '@/lib/profit';
 import { fetchClientLeads } from '@/lib/leads';
-import { queryMetrics } from '@/lib/metrics';
+import { spendByAdId } from '@/lib/metrics';
 import ClientTabs from '../ClientTabs';
+
+const NO_CATEGORY = '__none__';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,14 +37,29 @@ export default async function ClientSettingsPage({ params }: { params: { id: str
   const leads = await fetchClientLeads(params.id);
 
   // הוצאת פרסום לפי קטגוריה (כל התקופה) — לחישוב עלות לרכישה (CPA) בטאב אנליטיקה,
-  // כולל כשמסננים קטגוריות. המפתח הוא product_id (= category_id של הליד); '(none)' → ללא קטגוריה.
+  // כולל כשמסננים קטגוריות. ייחוס: הוצאת כל מודעה מחולקת לקטגוריות של הלידים שהיא הביאה
+  // (ad_id של הליד → category_id), pro-rata לפי כמות הלידים באותה מודעה.
   const spendByCategory: Record<string, number> = {};
   try {
-    const until = new Date().toISOString().slice(0, 10);
-    const metrics = await queryMetrics({ client_id: params.id }, 'category', { since: '2020-01-01', until });
-    for (const row of metrics.rows) {
-      const key = row.key === '(none)' ? '__none__' : row.key;
-      spendByCategory[key] = (spendByCategory[key] ?? 0) + row.spend;
+    const adSpend = await spendByAdId(params.id);
+    // ad_id → פירוק הלידים לקטגוריות + סך הלידים של אותה מודעה
+    const adCatCounts = new Map<string, Map<string, number>>();
+    const adTotals = new Map<string, number>();
+    for (const l of leads) {
+      if (!l.ad_id) continue;
+      const cat = l.category_id ?? NO_CATEGORY;
+      const counts = adCatCounts.get(l.ad_id) ?? new Map<string, number>();
+      counts.set(cat, (counts.get(cat) ?? 0) + 1);
+      adCatCounts.set(l.ad_id, counts);
+      adTotals.set(l.ad_id, (adTotals.get(l.ad_id) ?? 0) + 1);
+    }
+    for (const [adId, spend] of adSpend) {
+      const counts = adCatCounts.get(adId);
+      const total = adTotals.get(adId) ?? 0;
+      if (!counts || total === 0) continue; // מודעה עם הוצאה אך בלי לידים — לא ניתן לייחס
+      for (const [cat, cnt] of counts) {
+        spendByCategory[cat] = (spendByCategory[cat] ?? 0) + spend * (cnt / total);
+      }
     }
   } catch {
     /* אין נתוני מדדים — CPA יוצג כלא-זמין */
