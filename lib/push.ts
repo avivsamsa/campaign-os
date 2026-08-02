@@ -4,8 +4,10 @@ const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
 type LeadForPush = { id: string; name: string | null; category?: string | null };
 
-// שליחת התראת push לכל מכשירי הלקוח על ליד חדש. fire-and-forget — לעולם לא מפיל את הבליעה.
-export async function sendLeadPush(clientId: string, lead: LeadForPush): Promise<void> {
+type PushPayload = { title: string; body: string; data?: Record<string, unknown> };
+
+// שליחת push לכל מכשירי הלקוח + ניקוי טוקנים מתים. fire-and-forget — לעולם לא מפיל את הקורא.
+async function pushToClient(clientId: string, payload: PushPayload): Promise<void> {
   try {
     const sb = getSupabaseClient();
     const { data: rows } = await sb
@@ -16,16 +18,13 @@ export async function sendLeadPush(clientId: string, lead: LeadForPush): Promise
     const tokens = (rows ?? []).map((r) => r.token as string).filter(Boolean);
     if (!tokens.length) return;
 
-    // הקטגוריה (המוצר) בכותרת הראשית — למשל "ליד חדש · שימשיות"
-    const title = lead.category ? `ליד חדש · ${lead.category}` : 'ליד חדש 🎯';
-    const body = lead.name ? `${lead.name} ממתין לטיפול` : 'ליד חדש ממתין לטיפול';
     const messages = tokens.map((to) => ({
       to,
       sound: 'default',
-      title,
-      body,
       priority: 'high',
-      data: { type: 'new_lead', leadId: lead.id },
+      title: payload.title,
+      body: payload.body,
+      data: payload.data ?? {},
     }));
 
     const res = await fetch(EXPO_PUSH_URL, {
@@ -44,6 +43,28 @@ export async function sendLeadPush(clientId: string, lead: LeadForPush): Promise
       if (dead.length) await sb.from('client_push_tokens').delete().in('token', dead);
     }
   } catch {
-    /* לא מפילים ingestion בגלל push */
+    /* לא מפילים את הקורא בגלל push */
   }
+}
+
+// התראת push על ליד חדש — הקטגוריה (המוצר) בכותרת, למשל "ליד חדש · שימשיות".
+export async function sendLeadPush(clientId: string, lead: LeadForPush): Promise<void> {
+  await pushToClient(clientId, {
+    title: lead.category ? `ליד חדש · ${lead.category}` : 'ליד חדש 🎯',
+    body: lead.name ? `${lead.name} ממתין לטיפול` : 'ליד חדש ממתין לטיפול',
+    data: { type: 'new_lead', leadId: lead.id },
+  });
+}
+
+// התראת push על בעיה בחשבון המודעות (חסימת תשלום / השבתה).
+export async function sendAccountAlertPush(
+  clientId: string,
+  alert: { kind: 'payment' | 'disabled' | 'review'; message: string },
+): Promise<void> {
+  const title = alert.kind === 'payment' ? '⚠️ בעיית תשלום בחשבון המודעות' : '🚫 חשבון המודעות מושבת';
+  await pushToClient(clientId, {
+    title,
+    body: alert.message,
+    data: { type: 'account_alert' },
+  });
 }
