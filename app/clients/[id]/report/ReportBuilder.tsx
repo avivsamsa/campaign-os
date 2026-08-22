@@ -3,7 +3,13 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-type Props = { clientId: string; clientName: string; currency?: string | null };
+type Props = {
+  clientId: string;
+  clientName: string;
+  currency?: string | null;
+  initialSince?: string;
+  initialUntil?: string;
+};
 
 type CategoryRow = {
   id: string;
@@ -35,9 +41,9 @@ function isoDaysAgo(n: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-export default function ReportBuilder({ clientId, clientName, currency }: Props) {
-  const [since, setSince] = useState(isoDaysAgo(29));
-  const [until, setUntil] = useState(isoDaysAgo(0));
+export default function ReportBuilder({ clientId, clientName, currency, initialSince, initialUntil }: Props) {
+  const [since, setSince] = useState(initialSince ?? isoDaysAgo(29));
+  const [until, setUntil] = useState(initialUntil ?? isoDaysAgo(0));
   const [data, setData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

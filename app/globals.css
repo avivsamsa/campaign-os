@@ -2537,6 +2537,24 @@ body.portal-mode .app-main { margin-right: 0; }
   font-size: 0.88rem;
   margin: 0.25rem 0 1.25rem;
 }
+
+/* בורר טווח תאריכים בעמוד סקירת הלקוח */
+.overview-range {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin: 0.75rem 0 0.15rem;
+}
+.overview-range-dates {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.overview-range-dates .input {
+  width: auto;
+  min-width: 8.5rem;
+}
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));

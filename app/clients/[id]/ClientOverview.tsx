@@ -15,11 +15,35 @@ function isoDaysAgo(n: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+const PERIODS = [
+  { days: 7, label: '7 ימים' },
+  { days: 30, label: '30 יום' },
+  { days: 90, label: '90 יום' },
+];
+
 type Kpi = { label: string; value: string; accent?: boolean };
 
 export default function ClientOverview({ clientId, currency }: Props) {
-  const since = isoDaysAgo(29);
-  const until = isoDaysAgo(0);
+  // days = null → טווח מותאם אישית
+  const [days, setDays] = useState<number | null>(30);
+  const [customSince, setCustomSince] = useState(isoDaysAgo(29));
+  const [customUntil, setCustomUntil] = useState(isoDaysAgo(0));
+
+  const rawSince = days === null ? customSince : isoDaysAgo(days - 1);
+  const rawUntil = days === null ? customUntil : isoDaysAgo(0);
+  // אם המשתמש הפך את הסדר — מנרמלים כדי לא לשלוח טווח ריק
+  const since = rawSince <= rawUntil ? rawSince : rawUntil;
+  const until = rawSince <= rawUntil ? rawUntil : rawSince;
+
+  const rangeLabel =
+    days === null ? 'טווח מותאם' : PERIODS.find((p) => p.days === days)?.label ?? `${days} ימים`;
+
+  function pickCustom() {
+    // פותחים את הטווח המותאם מהטווח שמוצג כרגע
+    setCustomSince(since);
+    setCustomUntil(until);
+    setDays(null);
+  }
 
   const [metrics, setMetrics] = useState<MetricsResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -80,17 +104,57 @@ export default function ClientOverview({ clientId, currency }: Props) {
       ]
     : [];
 
+  const rangeQs = `?since=${since}&until=${until}`;
   const links = [
-    { href: `/clients/${clientId}/performance`, title: 'ביצועים', desc: 'טבלת Performance מלאה, scope וקיבוץ' },
+    { href: `/clients/${clientId}/performance${rangeQs}`, title: 'ביצועים', desc: 'טבלת Performance מלאה, scope וקיבוץ' },
     { href: `/clients/${clientId}/leads`, title: 'לידים', desc: 'ניהול הלידים של הלקוח' },
     { href: `/clients/${clientId}/creatives`, title: 'קריאטיבים', desc: 'ספריית הקריאטיבים והביצועים' },
-    { href: `/clients/${clientId}/report`, title: 'דוח', desc: 'ייצוא דוח לפי פילוח (כללי/קטגוריה/מודעה…)' },
+    { href: `/clients/${clientId}/report${rangeQs}`, title: 'דוח', desc: 'ייצוא דוח לפי פילוח (כללי/קטגוריה/מודעה…)' },
     { href: `/clients/${clientId}/settings`, title: 'הגדרות', desc: 'Brain, מנוע רווח, קטגוריות, סנכרון, פורטל' },
   ];
 
   return (
     <>
-      <div className="overview-sub">30 הימים האחרונים · {since} — {until}</div>
+      <div className="overview-range">
+        <div className="period-toggle">
+          {PERIODS.map((p) => (
+            <button
+              key={p.days}
+              className={`period-btn ${days === p.days ? 'active' : ''}`}
+              onClick={() => setDays(p.days)}
+            >
+              {p.label}
+            </button>
+          ))}
+          <button className={`period-btn ${days === null ? 'active' : ''}`} onClick={pickCustom}>
+            מותאם אישית
+          </button>
+        </div>
+
+        {days === null && (
+          <div className="overview-range-dates">
+            <input
+              className="input input-sm"
+              type="date"
+              value={customSince}
+              max={isoDaysAgo(0)}
+              onChange={(e) => setCustomSince(e.target.value)}
+              aria-label="מתאריך"
+            />
+            <span className="muted">—</span>
+            <input
+              className="input input-sm"
+              type="date"
+              value={customUntil}
+              max={isoDaysAgo(0)}
+              onChange={(e) => setCustomUntil(e.target.value)}
+              aria-label="עד תאריך"
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="overview-sub">{rangeLabel} · {since} — {until}</div>
 
       {error && <div className="banner-error">{error}</div>}
 

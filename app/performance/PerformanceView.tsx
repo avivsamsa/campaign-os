@@ -10,7 +10,7 @@ type CampaignOption = { id: string; name: string | null };
 type CreativeOption = { id: string; label: string };
 
 // כשמסופק lockedClientId — התצוגה נעולה ללקוח אחד (אזור הלקוח), בלי בורר לקוח.
-type Props = { lockedClientId?: string; clientName?: string };
+type Props = { lockedClientId?: string; clientName?: string; initialSince?: string; initialUntil?: string };
 
 const GROUP_BYS: { value: GroupBy; label: string }[] = [
   { value: 'day', label: 'יום' },
@@ -26,7 +26,7 @@ function isoDaysAgo(days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-export default function PerformanceView({ lockedClientId, clientName }: Props) {
+export default function PerformanceView({ lockedClientId, clientName, initialSince, initialUntil }: Props) {
   const locked = Boolean(lockedClientId);
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [campaigns, setCampaigns] = useState<CampaignOption[]>([]);
@@ -36,8 +36,8 @@ export default function PerformanceView({ lockedClientId, clientName }: Props) {
   const [campaignId, setCampaignId] = useState('');
   const [creativeId, setCreativeId] = useState('');
   const [groupBy, setGroupBy] = useState<GroupBy>('day');
-  const [since, setSince] = useState(isoDaysAgo(29));
-  const [until, setUntil] = useState(isoDaysAgo(0));
+  const [since, setSince] = useState(initialSince ?? isoDaysAgo(29));
+  const [until, setUntil] = useState(initialUntil ?? isoDaysAgo(0));
 
   const [result, setResult] = useState<MetricsResult | null>(null);
   const [loading, setLoading] = useState(false);
